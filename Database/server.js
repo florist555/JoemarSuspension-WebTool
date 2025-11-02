@@ -7,6 +7,8 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+const dashboardRoutes = require('./route/dashboard');
+app.use('/api/dashboard', dashboardRoutes);
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/mechanic-shop';
 
