@@ -5,6 +5,10 @@ const ticketSchema = new mongoose.Schema({
     type: String,
     unique: true,
   },
+  ticketNumber: {
+    type: String,
+    unique: true,
+  },
   customerName: {
     type: String,
     required: true

@@ -16,9 +16,21 @@ router.post('/', async (req, res) => {
       attempts++;
     }
 
+    let ticketNumber = ticketId;
+
+    const cleanedBody = { ...req.body };
+    
+    if (cleanedBody.assignedMechanic === "" || cleanedBody.assignedMechanic === null) {
+      delete cleanedBody.assignedMechanic;
+    }
+    if (cleanedBody.createdBy === "" || cleanedBody.createdBy === null) {
+      delete cleanedBody.createdBy;
+    }
+
     const ticket = new Ticket({
-      ...req.body,
+      ...cleanedBody,
       ticketId,
+      ticketNumber,
     });
 
     const savedTicket = await ticket.save();
@@ -51,9 +63,15 @@ router.get('/', async (req, res) => {
 
 router.patch('/:id', async (req, res) => {
   try {
+    const cleanedBody = { ...req.body };
+    
+    if (cleanedBody.assignedMechanic === "" || cleanedBody.assignedMechanic === null) {
+      delete cleanedBody.assignedMechanic;
+    }
+
     const updated = await Ticket.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      cleanedBody,
       { new: true }
     ).populate('assignedMechanic', 'name email IDnum');
 
