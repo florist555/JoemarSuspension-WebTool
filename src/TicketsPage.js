@@ -108,8 +108,8 @@ function TicketsPage() {
       if (res.ok) {
         const updatedTicket = await res.json();
         setTickets(tickets.map(t => t._id === updatedTicket._id ? updatedTicket : t));
-        setSelectedTicket(updatedTicket);
-        setEditedTicket(updatedTicket);
+        setSelectedTicket(null);
+        setEditedTicket(null);
         alert('Ticket updated successfully!');
       }
     } catch (err) {
