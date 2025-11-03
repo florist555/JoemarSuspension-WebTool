@@ -6,6 +6,7 @@ const InventoryPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOrder, setSortOrder] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [newItem, setNewItem] = useState({
     partName: "",
     partNumber: "",
@@ -85,6 +86,44 @@ const InventoryPage = () => {
     }
   };
 
+  const handleDeleteItem = async () => {
+    if (!selectedItem) return;
+    
+    try {
+      const response = await fetch(`http://localhost:5000/api/inventory/${selectedItem._id}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        setInventoryItems(inventoryItems.filter(item => item._id !== selectedItem._id));
+        setSelectedItem(null);
+        setShowDeleteConfirm(false);
+        alert('Item deleted successfully!');
+      }
+    } catch (error) {
+      console.error('Error deleting item:', error);
+      alert('Error deleting item. Please try again.');
+    }
+  };
+
+  const handleExportCSV = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/inventory/export/csv');
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `inventory_export_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error exporting CSV:', error);
+      alert('Error exporting CSV. Please try again.');
+    }
+  };
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { 
@@ -143,178 +182,208 @@ const InventoryPage = () => {
             borderRadius: "12px",
             boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
             overflowY: "auto",
-            flex: 1
+            flex: 1,
+            display: "flex",
+            flexDirection: "column"
           }}>
-            <div style={{ marginBottom: "15px" }}>
-              <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
-                Part Name
-              </label>
-              <input
-                type="text"
-                value={selectedItem.partName}
-                onChange={(e) => setSelectedItem({...selectedItem, partName: e.target.value})}
-                onBlur={() => updateItem(selectedItem._id, { partName: selectedItem.partName })}
-                style={{
-                  width: "100%",
-                  padding: "8px",
-                  borderRadius: "8px",
-                  border: "1px solid #BDB395",
-                  fontSize: "14px",
-                  outline: "none"
-                }}
-              />
-            </div>
-
-            <div style={{ marginBottom: "15px" }}>
-              <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
-                Price (₱)
-              </label>
-              <input
-                type="number"
-                value={selectedItem.price}
-                onChange={(e) => setSelectedItem({...selectedItem, price: parseFloat(e.target.value)})}
-                onBlur={() => updateItem(selectedItem._id, { price: selectedItem.price })}
-                style={{
-                  width: "100%",
-                  padding: "8px",
-                  borderRadius: "8px",
-                  border: "1px solid #BDB395",
-                  fontSize: "14px",
-                  outline: "none"
-                }}
-              />
-            </div>
-
-            <div style={{ marginBottom: "15px" }}>
-              <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
-                Supplier
-              </label>
-              <input
-                type="text"
-                value={selectedItem.supplier}
-                onChange={(e) => setSelectedItem({...selectedItem, supplier: e.target.value})}
-                onBlur={() => updateItem(selectedItem._id, { supplier: selectedItem.supplier })}
-                style={{
-                  width: "100%",
-                  padding: "8px",
-                  borderRadius: "8px",
-                  border: "1px solid #BDB395",
-                  fontSize: "14px",
-                  outline: "none"
-                }}
-              />
-            </div>
-
-            <div style={{ marginBottom: "15px" }}>
-              <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
-                ID Number
-              </label>
-              <input
-                type="text"
-                value={selectedItem.partNumber}
-                disabled
-                style={{
-                  width: "100%",
-                  padding: "8px",
-                  borderRadius: "8px",
-                  border: "1px solid #BDB395",
-                  fontSize: "14px",
-                  backgroundColor: "#f5f5f5",
-                  color: "#888"
-                }}
-              />
-            </div>
-
-            <div style={{ marginBottom: "15px" }}>
-              <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
-                Date Created
-              </label>
-              <input
-                type="text"
-                value={formatDate(selectedItem.createdAt)}
-                disabled
-                style={{
-                  width: "100%",
-                  padding: "8px",
-                  borderRadius: "8px",
-                  border: "1px solid #BDB395",
-                  fontSize: "14px",
-                  backgroundColor: "#f5f5f5",
-                  color: "#888"
-                }}
-              />
-            </div>
-
-            <div style={{ marginBottom: "15px" }}>
-              <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
-                Date Modified
-              </label>
-              <input
-                type="text"
-                value={formatDate(selectedItem.updatedAt)}
-                disabled
-                style={{
-                  width: "100%",
-                  padding: "8px",
-                  borderRadius: "8px",
-                  border: "1px solid #BDB395",
-                  fontSize: "14px",
-                  backgroundColor: "#f5f5f5",
-                  color: "#888"
-                }}
-              />
-            </div>
-
-            <div style={{ marginTop: "20px", padding: "15px", backgroundColor: "#F2E2B1", borderRadius: "10px" }}>
-              <label style={{ fontWeight: "600", color: "#555", fontSize: "14px", display: "block", marginBottom: "12px", textAlign: "center" }}>
-                Current Stock
-              </label>
-              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "15px" }}>
-                <button
-                  onClick={() => updateItem(selectedItem._id, { quantity: selectedItem.quantity - 1 })}
-                  disabled={selectedItem.quantity <= 0}
+            <div style={{ flex: 1, overflowY: "auto", paddingRight: "10px" }}>
+              <div style={{ marginBottom: "15px" }}>
+                <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
+                  Part Name
+                </label>
+                <input
+                  type="text"
+                  value={selectedItem.partName}
+                  onChange={(e) => setSelectedItem({...selectedItem, partName: e.target.value})}
+                  onBlur={() => updateItem(selectedItem._id, { partName: selectedItem.partName })}
                   style={{
-                    backgroundColor: "#D4A373",
-                    border: "none",
+                    width: "100%",
+                    padding: "8px",
                     borderRadius: "8px",
-                    padding: "10px 18px",
-                    cursor: selectedItem.quantity <= 0 ? "not-allowed" : "pointer",
-                    fontWeight: "bold",
-                    fontSize: "22px",
-                    color: "#fff",
-                    opacity: selectedItem.quantity <= 0 ? 0.5 : 1,
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
+                    border: "1px solid #BDB395",
+                    fontSize: "14px",
+                    outline: "none",
+                    boxSizing: "border-box"
                   }}
-                >
-                  -
-                </button>
-                <span style={{ 
-                  fontWeight: "bold", 
-                  fontSize: "28px", 
-                  minWidth: "70px", 
-                  textAlign: "center",
-                  color: selectedItem.quantity <= selectedItem.minStockLevel ? "#d32f2f" : "#000"
-                }}>
-                  {selectedItem.quantity}
-                </span>
-                <button
-                  onClick={() => updateItem(selectedItem._id, { quantity: selectedItem.quantity + 1 })}
+                />
+              </div>
+
+              <div style={{ marginBottom: "15px" }}>
+                <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
+                  Price (₱)
+                </label>
+                <input
+                  type="number"
+                  value={selectedItem.price}
+                  onChange={(e) => setSelectedItem({...selectedItem, price: parseFloat(e.target.value)})}
+                  onBlur={() => updateItem(selectedItem._id, { price: selectedItem.price })}
                   style={{
-                    backgroundColor: "#D4A373",
-                    border: "none",
+                    width: "100%",
+                    padding: "8px",
                     borderRadius: "8px",
-                    padding: "10px 18px",
-                    cursor: "pointer",
-                    fontWeight: "bold",
-                    fontSize: "22px",
-                    color: "#fff",
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
+                    border: "1px solid #BDB395",
+                    fontSize: "14px",
+                    outline: "none",
+                    boxSizing: "border-box"
                   }}
-                >
-                  +
-                </button>
+                />
+              </div>
+
+              <div style={{ marginBottom: "15px" }}>
+                <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
+                  Supplier
+                </label>
+                <input
+                  type="text"
+                  value={selectedItem.supplier}
+                  onChange={(e) => setSelectedItem({...selectedItem, supplier: e.target.value})}
+                  onBlur={() => updateItem(selectedItem._id, { supplier: selectedItem.supplier })}
+                  style={{
+                    width: "100%",
+                    padding: "8px",
+                    borderRadius: "8px",
+                    border: "1px solid #BDB395",
+                    fontSize: "14px",
+                    outline: "none",
+                    boxSizing: "border-box"
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: "15px" }}>
+                <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
+                  ID Number
+                </label>
+                <input
+                  type="text"
+                  value={selectedItem.partNumber}
+                  disabled
+                  style={{
+                    width: "100%",
+                    padding: "8px",
+                    borderRadius: "8px",
+                    border: "1px solid #BDB395",
+                    fontSize: "14px",
+                    backgroundColor: "#f5f5f5",
+                    color: "#888",
+                    boxSizing: "border-box"
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: "15px" }}>
+                <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
+                  Date Created
+                </label>
+                <input
+                  type="text"
+                  value={formatDate(selectedItem.createdAt)}
+                  disabled
+                  style={{
+                    width: "100%",
+                    padding: "8px",
+                    borderRadius: "8px",
+                    border: "1px solid #BDB395",
+                    fontSize: "14px",
+                    backgroundColor: "#f5f5f5",
+                    color: "#888",
+                    boxSizing: "border-box"
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: "15px" }}>
+                <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
+                  Date Modified
+                </label>
+                <input
+                  type="text"
+                  value={formatDate(selectedItem.updatedAt)}
+                  disabled
+                  style={{
+                    width: "100%",
+                    padding: "8px",
+                    borderRadius: "8px",
+                    border: "1px solid #BDB395",
+                    fontSize: "14px",
+                    backgroundColor: "#f5f5f5",
+                    color: "#888",
+                    boxSizing: "border-box"
+                  }}
+                />
+              </div>
+
+              <div style={{ marginTop: "20px", padding: "15px", backgroundColor: "#F2E2B1", borderRadius: "10px", marginBottom: "15px" }}>
+                <label style={{ fontWeight: "600", color: "#555", fontSize: "14px", display: "block", marginBottom: "12px", textAlign: "center" }}>
+                  Current Stock
+                </label>
+                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "15px" }}>
+                  <button
+                    onClick={() => updateItem(selectedItem._id, { quantity: selectedItem.quantity - 1 })}
+                    disabled={selectedItem.quantity <= 0}
+                    style={{
+                      backgroundColor: "#D4A373",
+                      border: "none",
+                      borderRadius: "8px",
+                      padding: "10px 18px",
+                      cursor: selectedItem.quantity <= 0 ? "not-allowed" : "pointer",
+                      fontWeight: "bold",
+                      fontSize: "22px",
+                      color: "#fff",
+                      opacity: selectedItem.quantity <= 0 ? 0.5 : 1,
+                      boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
+                    }}
+                  >
+                    -
+                  </button>
+                  <span style={{ 
+                    fontWeight: "bold", 
+                    fontSize: "28px", 
+                    minWidth: "70px", 
+                    textAlign: "center",
+                    color: selectedItem.quantity <= selectedItem.minStockLevel ? "#d32f2f" : "#000"
+                  }}>
+                    {selectedItem.quantity}
+                  </span>
+                  <button
+                    onClick={() => updateItem(selectedItem._id, { quantity: selectedItem.quantity + 1 })}
+                    style={{
+                      backgroundColor: "#D4A373",
+                      border: "none",
+                      borderRadius: "8px",
+                      padding: "10px 18px",
+                      cursor: "pointer",
+                      fontWeight: "bold",
+                      fontSize: "22px",
+                      color: "#fff",
+                      boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
+                    }}
+                  >
+                    +
+                  </button>
+                </div>
               </div>
             </div>
+
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              style={{
+                width: "100%",
+                padding: "12px",
+                backgroundColor: "#d9534f",
+                color: "#fff",
+                border: "none",
+                borderRadius: "8px",
+                fontSize: "16px",
+                fontWeight: "bold",
+                cursor: "pointer",
+                marginTop: "10px",
+                flexShrink: 0,
+                transition: "all 0.2s ease"
+              }}
+            >
+              Delete Item
+            </button>
           </div>
         ) : (
           <div style={{ 
@@ -351,25 +420,43 @@ const InventoryPage = () => {
           Inventory
         </h1>
 
-        <button
-          onClick={() => setShowAddForm(!showAddForm)}
-          style={{
-            width: "100%",
-            padding: "10px",
-            marginBottom: "15px",
-            backgroundColor: "#D4A373",
-            color: "#fff",
-            border: "none",
-            borderRadius: "10px",
-            fontSize: "15px",
-            fontWeight: "bold",
-            cursor: "pointer",
-            boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-            flexShrink: 0
-          }}
-        >
-          {showAddForm ? "Cancel" : "+ Add New Item"}
-        </button>
+        <div style={{ display: "flex", gap: "10px", marginBottom: "15px", flexShrink: 0 }}>
+          <button
+            onClick={() => setShowAddForm(!showAddForm)}
+            style={{
+              flex: 1,
+              padding: "10px",
+              backgroundColor: "#D4A373",
+              color: "#fff",
+              border: "none",
+              borderRadius: "10px",
+              fontSize: "15px",
+              fontWeight: "bold",
+              cursor: "pointer",
+              boxShadow: "0 2px 6px rgba(0,0,0,0.2)"
+            }}
+          >
+            {showAddForm ? "Cancel" : "+ Add New Item"}
+          </button>
+          
+          <button
+            onClick={handleExportCSV}
+            style={{
+              flex: 1,
+              padding: "10px",
+              backgroundColor: "#5cb85c",
+              color: "#fff",
+              border: "none",
+              borderRadius: "10px",
+              fontSize: "15px",
+              fontWeight: "bold",
+              cursor: "pointer",
+              boxShadow: "0 2px 6px rgba(0,0,0,0.2)"
+            }}
+          >
+            Export to CSV
+          </button>
+        </div>
 
         {showAddForm && (
           <form onSubmit={addNewItem} style={{
@@ -394,7 +481,8 @@ const InventoryPage = () => {
                 marginBottom: "8px",
                 borderRadius: "8px",
                 border: "1px solid #BDB395",
-                fontSize: "13px"
+                fontSize: "13px",
+                boxSizing: "border-box"
               }}
             />
             
@@ -410,7 +498,8 @@ const InventoryPage = () => {
                 marginBottom: "8px",
                 borderRadius: "8px",
                 border: "1px solid #BDB395",
-                fontSize: "13px"
+                fontSize: "13px",
+                boxSizing: "border-box"
               }}
             />
             
@@ -426,7 +515,8 @@ const InventoryPage = () => {
                 marginBottom: "8px",
                 borderRadius: "8px",
                 border: "1px solid #BDB395",
-                fontSize: "13px"
+                fontSize: "13px",
+                boxSizing: "border-box"
               }}
             />
             
@@ -442,7 +532,8 @@ const InventoryPage = () => {
                 marginBottom: "8px",
                 borderRadius: "8px",
                 border: "1px solid #BDB395",
-                fontSize: "13px"
+                fontSize: "13px",
+                boxSizing: "border-box"
               }}
             />
             
@@ -458,7 +549,8 @@ const InventoryPage = () => {
                 marginBottom: "12px",
                 borderRadius: "8px",
                 border: "1px solid #BDB395",
-                fontSize: "13px"
+                fontSize: "13px",
+                boxSizing: "border-box"
               }}
             />
             
@@ -495,7 +587,8 @@ const InventoryPage = () => {
             fontSize: "14px",
             outline: "none",
             boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
-            flexShrink: 0
+            flexShrink: 0,
+            boxSizing: "border-box"
           }}
         />
 
@@ -513,7 +606,8 @@ const InventoryPage = () => {
             boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
             backgroundColor: "#fff",
             cursor: "pointer",
-            flexShrink: 0
+            flexShrink: 0,
+            boxSizing: "border-box"
           }}
         >
           <option value="">Sort by Price</option>
@@ -558,6 +652,67 @@ const InventoryPage = () => {
           ))}
         </div>
       </div>
+
+      {showDeleteConfirm && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "rgba(0,0,0,0.5)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: "#fff",
+            padding: "30px",
+            borderRadius: "12px",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+            maxWidth: "400px",
+            textAlign: "center"
+          }}>
+            <h3 style={{ marginBottom: "15px", color: "#d9534f" }}>Confirm Delete</h3>
+            <p style={{ marginBottom: "20px", color: "#666" }}>
+              Are you sure you want to delete <strong>{selectedItem?.partName}</strong>? This action cannot be undone.
+            </p>
+            <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: "#ccc",
+                  color: "#000",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  fontWeight: "bold",
+                  cursor: "pointer"
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteItem}
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: "#d9534f",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  fontWeight: "bold",
+                  cursor: "pointer"
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

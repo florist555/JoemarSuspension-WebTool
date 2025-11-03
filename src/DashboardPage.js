@@ -32,10 +32,11 @@ function DashboardPage() {
 
   useEffect(() => {
     fetchDashboardStats();
-  }, []);
+  }, [location.pathname]); // Added dependency - refetch when route changes
 
   const fetchDashboardStats = async () => {
     try {
+      setLoading(true); // Set loading true on each fetch
       const response = await fetch("http://localhost:5000/api/dashboard/stats");
       const data = await response.json();
       setStats(data);

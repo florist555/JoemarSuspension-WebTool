@@ -6,77 +6,113 @@ const Inventory = require('../Inv/Inventory');
 router.get('/stats', async (req, res) => {
   try {
     const now = new Date();
-    const startOfToday = new Date(now.setHours(0, 0, 0, 0));
-    const endOfToday = new Date(now.setHours(23, 59, 59, 999));
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    const firstDayThisMonth = new Date(currentYear, currentMonth, 1);
+    const lastDayThisMonth = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59);
+    
+    const firstDayLastMonth = new Date(currentYear, currentMonth - 1, 1);
+    const lastDayLastMonth = new Date(currentYear, currentMonth, 0, 23, 59, 59);
 
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+    const thisMonthRevenue = await Ticket.aggregate([
+      {
+        $match: {
+          status: 'Completed',
+          completedDate: {
+            $gte: firstDayThisMonth,
+            $lte: lastDayThisMonth
+          }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: '$actualCost' }
+        }
+      }
+    ]);
 
-    const [
-      ticketsByStatus,
-      todaysActiveTickets,
-      thisMonthRevenue,
-      lastMonthRevenue,
-      lowStockItems,
-      inventoryByCategory
-    ] = await Promise.all([
-      Ticket.aggregate([
-        { $group: { _id: '$status', count: { $sum: 1 } } }
-      ]),
-      Ticket.find({
-        status: 'In Progress',
-        updatedAt: { $gte: startOfToday, $lte: endOfToday }
-      }).populate('assignedMechanic', 'name'),
-      Ticket.aggregate([
-        {
-          $match: {
-            status: 'Completed',
-            completedDate: { $gte: startOfMonth }
+    const lastMonthRevenue = await Ticket.aggregate([
+      {
+        $match: {
+          status: 'Completed',
+          completedDate: {
+            $gte: firstDayLastMonth,
+            $lte: lastDayLastMonth
           }
-        },
-        { $group: { _id: null, total: { $sum: '$actualCost' } } }
-      ]),
-      Ticket.aggregate([
-        {
-          $match: {
-            status: 'Completed',
-            completedDate: { $gte: startOfLastMonth, $lte: endOfLastMonth }
-          }
-        },
-        { $group: { _id: null, total: { $sum: '$actualCost' } } }
-      ]),
-      Inventory.find().then(items => 
-        items.filter(item => item.quantity <= item.minStockLevel)
-      ),
-      Inventory.aggregate([
-        { $group: { _id: '$category', count: { $sum: 1 }, totalValue: { $sum: { $multiply: ['$quantity', '$price'] } } } }
-      ])
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: '$actualCost' }
+        }
+      }
     ]);
 
     const thisMonth = thisMonthRevenue[0]?.total || 0;
     const lastMonth = lastMonthRevenue[0]?.total || 0;
-    const growthPercentage = lastMonth === 0 ? 0 : ((thisMonth - lastMonth) / lastMonth) * 100;
+    
+    let growthPercentage = 0;
+    if (lastMonth > 0) {
+      growthPercentage = (((thisMonth - lastMonth) / lastMonth) * 100).toFixed(1);
+    } else if (thisMonth > 0) {
+      growthPercentage = 100;
+    }
 
-    const statusData = ticketsByStatus.reduce((acc, item) => {
-      acc[item._id] = item.count;
-      return acc;
-    }, {});
+    const ticketsByStatus = await Ticket.aggregate([
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const statusObj = {};
+    ticketsByStatus.forEach(item => {
+      statusObj[item._id] = item.count;
+    });
+
+    const inventoryByCategory = await Inventory.aggregate([
+      {
+        $group: {
+          _id: '$category',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const lowStockItems = await Inventory.find({
+      $expr: { $lte: ['$quantity', '$minStockLevel'] }
+    }).limit(10);
+
+    const startOfDay = new Date(now.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(now.setHours(23, 59, 59, 999));
+
+    const todaysActiveTickets = await Ticket.find({
+      status: { $in: ['In Progress', 'Pending'] },
+      createdAt: { $gte: startOfDay, $lte: endOfDay }
+    })
+      .populate('assignedMechanic', 'name email')
+      .limit(10);
 
     res.json({
-      ticketsByStatus: statusData,
-      todaysActiveTickets,
       revenue: {
         thisMonth,
         lastMonth,
-        growthPercentage: growthPercentage.toFixed(2)
+        growthPercentage: parseFloat(growthPercentage)
       },
+      ticketsByStatus: statusObj,
+      inventoryByCategory,
       lowStockItems,
-      inventoryByCategory
+      todaysActiveTickets
     });
+
   } catch (error) {
     console.error('Error fetching dashboard stats:', error);
-    res.status(500).json({ message: 'Error fetching dashboard statistics', error });
+    res.status(500).json({ message: 'Error fetching dashboard stats', error: error.message });
   }
 });
 

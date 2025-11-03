@@ -7,6 +7,7 @@ function TicketsPage() {
   const [editedTicket, setEditedTicket] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [formData, setFormData] = useState({
     customerName: "",
     customerId: "",
@@ -88,12 +89,20 @@ function TicketsPage() {
     
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/tickets/${editedTicket._id}`, {
+      let endpoint = `${API_URL}/tickets/${editedTicket._id}`;
+      let body = editedTicket;
+
+      if (editedTicket.status === 'Completed' && selectedTicket.status !== 'Completed') {
+        endpoint = `${API_URL}/tickets/${editedTicket._id}/mark-done`;
+        body = { actualCost: editedTicket.actualCost || 0 };
+      }
+
+      const res = await fetch(endpoint, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(editedTicket)
+        body: JSON.stringify(body)
       });
 
       if (res.ok) {
@@ -108,6 +117,48 @@ function TicketsPage() {
       alert('Error updating ticket. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteTicket = async () => {
+    if (!editedTicket) return;
+    
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/tickets/${editedTicket._id}`, {
+        method: "DELETE"
+      });
+
+      if (res.ok) {
+        setTickets(tickets.filter(t => t._id !== editedTicket._id));
+        setSelectedTicket(null);
+        setEditedTicket(null);
+        setShowDeleteConfirm(false);
+        alert('Ticket deleted successfully!');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error deleting ticket. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExportCSV = async () => {
+    try {
+      const res = await fetch(`${API_URL}/tickets/export/csv`);
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `tickets_export_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert('Error exporting CSV. Please try again.');
     }
   };
 
@@ -310,6 +361,26 @@ function TicketsPage() {
 
               <div style={{ marginBottom: "15px" }}>
                 <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
+                  Actual Cost (₱)
+                </label>
+                <input
+                  type="number"
+                  value={editedTicket.actualCost}
+                  onChange={(e) => setEditedTicket({...editedTicket, actualCost: parseFloat(e.target.value) || 0})}
+                  style={{
+                    width: "100%",
+                    padding: "8px",
+                    borderRadius: "8px",
+                    border: "1px solid #BDB395",
+                    fontSize: "14px",
+                    outline: "none",
+                    boxSizing: "border-box"
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: "15px" }}>
+                <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
                   Date Created
                 </label>
                 <input
@@ -382,26 +453,45 @@ function TicketsPage() {
               </div>
             </div>
 
-            <button
-              onClick={handleSaveChanges}
-              disabled={!hasChanges || loading}
-              style={{
-                width: "100%",
-                padding: "12px",
-                backgroundColor: hasChanges ? "#8B6F47" : "#ccc",
-                color: "#fff",
-                border: "none",
-                borderRadius: "8px",
-                fontSize: "16px",
-                fontWeight: "bold",
-                cursor: hasChanges && !loading ? "pointer" : "not-allowed",
-                marginTop: "10px",
-                flexShrink: 0,
-                transition: "all 0.2s ease"
-              }}
-            >
-              {loading ? "Saving..." : hasChanges ? "Save Changes" : "No Changes"}
-            </button>
+            <div style={{ display: "flex", gap: "10px", marginTop: "10px", flexShrink: 0 }}>
+              <button
+                onClick={handleSaveChanges}
+                disabled={!hasChanges || loading}
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  backgroundColor: hasChanges ? "#8B6F47" : "#ccc",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "16px",
+                  fontWeight: "bold",
+                  cursor: hasChanges && !loading ? "pointer" : "not-allowed",
+                  transition: "all 0.2s ease"
+                }}
+              >
+                {loading ? "Saving..." : hasChanges ? "Save Changes" : "No Changes"}
+              </button>
+              
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={loading}
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  backgroundColor: "#d9534f",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "16px",
+                  fontWeight: "bold",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  transition: "all 0.2s ease"
+                }}
+              >
+                Delete Ticket
+              </button>
+            </div>
           </div>
         ) : (
           <div style={{ 
@@ -438,25 +528,43 @@ function TicketsPage() {
           Manage Tickets
         </h1>
 
-        <button
-          onClick={() => setShowAddForm(!showAddForm)}
-          style={{
-            width: "100%",
-            padding: "10px",
-            marginBottom: "15px",
-            backgroundColor: "#D4A373",
-            color: "#fff",
-            border: "none",
-            borderRadius: "10px",
-            fontSize: "15px",
-            fontWeight: "bold",
-            cursor: "pointer",
-            boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-            flexShrink: 0
-          }}
-        >
-          {showAddForm ? "Cancel" : "+ Create New Ticket"}
-        </button>
+        <div style={{ display: "flex", gap: "10px", marginBottom: "15px", flexShrink: 0 }}>
+          <button
+            onClick={() => setShowAddForm(!showAddForm)}
+            style={{
+              flex: 1,
+              padding: "10px",
+              backgroundColor: "#D4A373",
+              color: "#fff",
+              border: "none",
+              borderRadius: "10px",
+              fontSize: "15px",
+              fontWeight: "bold",
+              cursor: "pointer",
+              boxShadow: "0 2px 6px rgba(0,0,0,0.2)"
+            }}
+          >
+            {showAddForm ? "Cancel" : "+ Create New Ticket"}
+          </button>
+          
+          <button
+            onClick={handleExportCSV}
+            style={{
+              flex: 1,
+              padding: "10px",
+              backgroundColor: "#5cb85c",
+              color: "#fff",
+              border: "none",
+              borderRadius: "10px",
+              fontSize: "15px",
+              fontWeight: "bold",
+              cursor: "pointer",
+              boxShadow: "0 2px 6px rgba(0,0,0,0.2)"
+            }}
+          >
+            Export to CSV
+          </button>
+        </div>
 
         {showAddForm && (
           <form onSubmit={handleCreateTicket} style={{
@@ -661,6 +769,68 @@ function TicketsPage() {
           ))}
         </div>
       </div>
+
+      {showDeleteConfirm && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "rgba(0,0,0,0.5)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: "#fff",
+            padding: "30px",
+            borderRadius: "12px",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+            maxWidth: "400px",
+            textAlign: "center"
+          }}>
+            <h3 style={{ marginBottom: "15px", color: "#d9534f" }}>Confirm Delete</h3>
+            <p style={{ marginBottom: "20px", color: "#666" }}>
+              Are you sure you want to delete ticket <strong>{editedTicket?.ticketId}</strong>? This action cannot be undone.
+            </p>
+            <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: "#ccc",
+                  color: "#000",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  fontWeight: "bold",
+                  cursor: "pointer"
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteTicket}
+                disabled={loading}
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: "#d9534f",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  fontWeight: "bold",
+                  cursor: loading ? "not-allowed" : "pointer"
+                }}
+              >
+                {loading ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
