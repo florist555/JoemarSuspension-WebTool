@@ -37,7 +37,7 @@ const inventorySchema = new mongoose.Schema({
   category: {
     type: String,
     required: true,
-    enum: ['Oil', 'Filters', 'Tires', 'Brake Parts', 'Engine Parts', 'Electrical', 'Body Parts', 'Tools', 'Other'],
+    enum: ['Engine', 'Brakes', 'Suspension', 'Transmission', 'Ignition', 'Exhaust', 'Cooling', 'Fuel', 'Other'],
     default: 'Other'
   },
   description: {
@@ -47,7 +47,6 @@ const inventorySchema = new mongoose.Schema({
 }, {
   timestamps: true 
 });
-
 
 inventorySchema.virtual('isLowStock').get(function() {
   return this.quantity <= this.minStockLevel;

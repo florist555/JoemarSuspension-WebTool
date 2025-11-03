@@ -460,7 +460,7 @@ function TicketsPage() {
                 style={{
                   flex: 1,
                   padding: "12px",
-                  backgroundColor: hasChanges ? "#8B6F47" : "#ccc",
+                  backgroundColor: hasChanges ? "#5cb85c" : "#ccc",
                   color: "#fff",
                   border: "none",
                   borderRadius: "8px",
@@ -730,7 +730,7 @@ function TicketsPage() {
           {filteredTickets.map(ticket => (
             <div
               key={ticket._id}
-              onClick={() => setSelectedTicket(ticket)}
+              onClick={() => setSelectedTicket(selectedTicket?._id === ticket._id ? null : ticket)}
               style={{
                 padding: "12px",
                 marginBottom: "10px",

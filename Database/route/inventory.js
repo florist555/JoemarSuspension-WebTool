@@ -77,21 +77,31 @@ router.get('/:id', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  const item = new Inventory({
-    partName: req.body.partName,
-    partNumber: req.body.partNumber,
-    quantity: req.body.quantity,
-    minStockLevel: req.body.minStockLevel,
-    price: req.body.price,
-    supplier: req.body.supplier,
-    category: req.body.category,
-    description: req.body.description
-  });
-
   try {
+    console.log('Received data:', req.body);
+
+    const item = new Inventory({
+      partName: req.body.partName,
+      partNumber: req.body.partNumber,
+      quantity: req.body.quantity,
+      minStockLevel: req.body.minStockLevel || 5,
+      price: req.body.price,
+      supplier: req.body.supplier,
+      category: req.body.category || 'Other',
+      description: req.body.description || ''
+    });
+
     const newItem = await item.save();
     res.status(201).json(newItem);
   } catch (error) {
+    console.error('Error saving item:', error);
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({ message: 'Validation failed', errors });
+    }
+    if (error.code === 11000) {
+      return res.status(400).json({ message: 'Part Number already exists' });
+    }
     res.status(400).json({ message: error.message });
   }
 });

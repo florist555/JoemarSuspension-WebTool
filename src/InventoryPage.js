@@ -10,13 +10,25 @@ const InventoryPage = () => {
   const [newItem, setNewItem] = useState({
     partName: "",
     partNumber: "",
-    quantity: 0,
-    price: 0,
+    quantity: "",
+    price: "",
     supplier: "",
     minStockLevel: 5,
     category: "Other",
     description: ""
   });
+
+  const categories = [
+    "Engine",
+    "Brakes",
+    "Suspension",
+    "Transmission",
+    "Ignition",
+    "Exhaust",
+    "Cooling",
+    "Fuel",
+    "Other"
+  ];
 
   useEffect(() => {
     fetchInventory();
@@ -26,9 +38,16 @@ const InventoryPage = () => {
     try {
       const response = await fetch('http://localhost:5000/api/inventory');
       const data = await response.json();
-      setInventoryItems(data);
+      console.log('Fetched data:', data);
+      if (Array.isArray(data)) {
+        setInventoryItems(data);
+      } else {
+        console.error('Expected array but got:', data);
+        setInventoryItems([]);
+      }
     } catch (error) {
       console.error('Error fetching inventory:', error);
+      setInventoryItems([]);
     }
   };
 
@@ -51,30 +70,63 @@ const InventoryPage = () => {
       );
       
       setSelectedItem(updatedItem);
+      alert('Changes saved successfully!');
     } catch (error) {
       console.error('Error updating item:', error);
+      alert('Error saving changes. Please try again.');
     }
+  };
+
+  const handleSaveChanges = () => {
+    if (!selectedItem) return;
+    updateItem(selectedItem._id, {
+      partName: selectedItem.partName,
+      category: selectedItem.category,
+      price: selectedItem.price,
+      supplier: selectedItem.supplier
+    });
   };
 
   const addNewItem = async (e) => {
     e.preventDefault();
     try {
+      const itemToSend = {
+        partName: newItem.partName,
+        partNumber: newItem.partNumber,
+        quantity: parseInt(newItem.quantity) || 0,
+        price: parseFloat(newItem.price) || 0,
+        supplier: newItem.supplier,
+        minStockLevel: newItem.minStockLevel || 5,
+        category: newItem.category || "Other",
+        description: newItem.description || ""
+      };
+
+      console.log('Sending item:', itemToSend);
+
       const response = await fetch('http://localhost:5000/api/inventory', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(newItem)
+        body: JSON.stringify(itemToSend)
       });
       
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Server error:', errorData);
+        console.error('Full error response:', JSON.stringify(errorData, null, 2));
+        alert(`Error adding item: ${errorData.message || 'Unknown error'}`);
+        return;
+      }
+
       const addedItem = await response.json();
       setInventoryItems([addedItem, ...inventoryItems]);
       setShowAddForm(false);
       setNewItem({
         partName: "",
         partNumber: "",
-        quantity: 0,
-        price: 0,
+        quantity: "",
+        price: "",
         supplier: "",
         minStockLevel: 5,
         category: "Other",
@@ -137,8 +189,8 @@ const InventoryPage = () => {
 
   const filteredAndSortedItems = inventoryItems
     .filter(item => 
-      item.partName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.partNumber.toLowerCase().includes(searchTerm.toLowerCase())
+      (item.partName && item.partName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (item.partNumber && item.partNumber.toLowerCase().includes(searchTerm.toLowerCase()))
     )
     .sort((a, b) => {
       if (sortOrder === "highToLow") return b.price - a.price;
@@ -195,7 +247,6 @@ const InventoryPage = () => {
                   type="text"
                   value={selectedItem.partName}
                   onChange={(e) => setSelectedItem({...selectedItem, partName: e.target.value})}
-                  onBlur={() => updateItem(selectedItem._id, { partName: selectedItem.partName })}
                   style={{
                     width: "100%",
                     padding: "8px",
@@ -210,13 +261,37 @@ const InventoryPage = () => {
 
               <div style={{ marginBottom: "15px" }}>
                 <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
+                  Category
+                </label>
+                <select
+                  value={selectedItem.category}
+                  onChange={(e) => setSelectedItem({...selectedItem, category: e.target.value})}
+                  style={{
+                    width: "100%",
+                    padding: "8px",
+                    borderRadius: "8px",
+                    border: "1px solid #BDB395",
+                    fontSize: "14px",
+                    outline: "none",
+                    boxSizing: "border-box",
+                    backgroundColor: "#fff",
+                    cursor: "pointer"
+                  }}
+                >
+                  {categories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ marginBottom: "15px" }}>
+                <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
                   Price (₱)
                 </label>
                 <input
                   type="number"
                   value={selectedItem.price}
                   onChange={(e) => setSelectedItem({...selectedItem, price: parseFloat(e.target.value)})}
-                  onBlur={() => updateItem(selectedItem._id, { price: selectedItem.price })}
                   style={{
                     width: "100%",
                     padding: "8px",
@@ -237,7 +312,6 @@ const InventoryPage = () => {
                   type="text"
                   value={selectedItem.supplier}
                   onChange={(e) => setSelectedItem({...selectedItem, supplier: e.target.value})}
-                  onBlur={() => updateItem(selectedItem._id, { supplier: selectedItem.supplier })}
                   style={{
                     width: "100%",
                     padding: "8px",
@@ -271,47 +345,51 @@ const InventoryPage = () => {
                 />
               </div>
 
-              <div style={{ marginBottom: "15px" }}>
-                <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
-                  Date Created
-                </label>
-                <input
-                  type="text"
-                  value={formatDate(selectedItem.createdAt)}
-                  disabled
-                  style={{
-                    width: "100%",
-                    padding: "8px",
-                    borderRadius: "8px",
-                    border: "1px solid #BDB395",
-                    fontSize: "14px",
-                    backgroundColor: "#f5f5f5",
-                    color: "#888",
-                    boxSizing: "border-box"
-                  }}
-                />
-              </div>
+              {selectedItem.createdAt && (
+                <div style={{ marginBottom: "15px" }}>
+                  <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
+                    Date Created
+                  </label>
+                  <input
+                    type="text"
+                    value={formatDate(selectedItem.createdAt)}
+                    disabled
+                    style={{
+                      width: "100%",
+                      padding: "8px",
+                      borderRadius: "8px",
+                      border: "1px solid #BDB395",
+                      fontSize: "14px",
+                      backgroundColor: "#f5f5f5",
+                      color: "#888",
+                      boxSizing: "border-box"
+                    }}
+                  />
+                </div>
+              )}
 
-              <div style={{ marginBottom: "15px" }}>
-                <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
-                  Date Modified
-                </label>
-                <input
-                  type="text"
-                  value={formatDate(selectedItem.updatedAt)}
-                  disabled
-                  style={{
-                    width: "100%",
-                    padding: "8px",
-                    borderRadius: "8px",
-                    border: "1px solid #BDB395",
-                    fontSize: "14px",
-                    backgroundColor: "#f5f5f5",
-                    color: "#888",
-                    boxSizing: "border-box"
-                  }}
-                />
-              </div>
+              {selectedItem.updatedAt && (
+                <div style={{ marginBottom: "15px" }}>
+                  <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
+                    Date Modified
+                  </label>
+                  <input
+                    type="text"
+                    value={formatDate(selectedItem.updatedAt)}
+                    disabled
+                    style={{
+                      width: "100%",
+                      padding: "8px",
+                      borderRadius: "8px",
+                      border: "1px solid #BDB395",
+                      fontSize: "14px",
+                      backgroundColor: "#f5f5f5",
+                      color: "#888",
+                      boxSizing: "border-box"
+                    }}
+                  />
+                </div>
+              )}
 
               <div style={{ marginTop: "20px", padding: "15px", backgroundColor: "#F2E2B1", borderRadius: "10px", marginBottom: "15px" }}>
                 <label style={{ fontWeight: "600", color: "#555", fontSize: "14px", display: "block", marginBottom: "12px", textAlign: "center" }}>
@@ -365,25 +443,42 @@ const InventoryPage = () => {
               </div>
             </div>
 
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              style={{
-                width: "100%",
-                padding: "12px",
-                backgroundColor: "#d9534f",
-                color: "#fff",
-                border: "none",
-                borderRadius: "8px",
-                fontSize: "16px",
-                fontWeight: "bold",
-                cursor: "pointer",
-                marginTop: "10px",
-                flexShrink: 0,
-                transition: "all 0.2s ease"
-              }}
-            >
-              Delete Item
-            </button>
+            <div style={{ display: "flex", gap: "10px", marginTop: "10px", flexShrink: 0 }}>
+              <button
+                onClick={handleSaveChanges}
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  backgroundColor: "#5cb85c",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "16px",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease"
+                }}
+              >
+                Save Changes
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  backgroundColor: "#d9534f",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "16px",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease"
+                }}
+              >
+                Delete Item
+              </button>
+            </div>
           </div>
         ) : (
           <div style={{ 
@@ -486,6 +581,27 @@ const InventoryPage = () => {
               }}
             />
             
+            <select
+              required
+              value={newItem.category}
+              onChange={(e) => setNewItem({...newItem, category: e.target.value})}
+              style={{
+                width: "100%",
+                padding: "8px",
+                marginBottom: "8px",
+                borderRadius: "8px",
+                border: "1px solid #BDB395",
+                fontSize: "13px",
+                boxSizing: "border-box",
+                backgroundColor: "#fff",
+                cursor: "pointer"
+              }}
+            >
+              {categories.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+            
             <input
               type="text"
               placeholder="Part Number (ID)"
@@ -507,8 +623,9 @@ const InventoryPage = () => {
               type="number"
               placeholder="Quantity"
               required
+              min="0"
               value={newItem.quantity}
-              onChange={(e) => setNewItem({...newItem, quantity: parseInt(e.target.value)})}
+              onChange={(e) => setNewItem({...newItem, quantity: e.target.value ? parseInt(e.target.value) : ""})}
               style={{
                 width: "100%",
                 padding: "8px",
@@ -524,8 +641,10 @@ const InventoryPage = () => {
               type="number"
               placeholder="Price"
               required
+              min="0"
+              step="0.01"
               value={newItem.price}
-              onChange={(e) => setNewItem({...newItem, price: parseFloat(e.target.value)})}
+              onChange={(e) => setNewItem({...newItem, price: e.target.value ? parseFloat(e.target.value) : ""})}
               style={{
                 width: "100%",
                 padding: "8px",
@@ -623,7 +742,7 @@ const InventoryPage = () => {
           {filteredAndSortedItems.map(item => (
             <div
               key={item._id}
-              onClick={() => setSelectedItem(item)}
+              onClick={() => setSelectedItem(selectedItem?._id === item._id ? null : item)}
               style={{
                 padding: "12px",
                 marginBottom: "10px",

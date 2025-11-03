@@ -75,18 +75,30 @@ router.get('/stats', async (req, res) => {
       statusObj[item._id] = item.count;
     });
 
-    const inventoryByCategory = await Inventory.aggregate([
-      {
-        $group: {
-          _id: '$category',
-          count: { $sum: 1 }
+    let inventoryByCategory = [];
+    try {
+      inventoryByCategory = await Inventory.aggregate([
+        {
+          $group: {
+            _id: '$category',
+            count: { $sum: 1 }
+          }
         }
-      }
-    ]);
+      ]);
+    } catch (err) {
+      console.error('Error aggregating inventory by category:', err);
+      inventoryByCategory = [];
+    }
 
-    const lowStockItems = await Inventory.find({
-      $expr: { $lte: ['$quantity', '$minStockLevel'] }
-    }).limit(10);
+    let lowStockItems = [];
+    try {
+      lowStockItems = await Inventory.find({
+        $expr: { $lte: ['$quantity', '$minStockLevel'] }
+      }).limit(10);
+    } catch (err) {
+      console.error('Error finding low stock items:', err);
+      lowStockItems = [];
+    }
 
     const startOfDay = new Date(now.setHours(0, 0, 0, 0));
     const endOfDay = new Date(now.setHours(23, 59, 59, 999));
