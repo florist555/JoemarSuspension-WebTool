@@ -30,12 +30,10 @@ function DashboardPage() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch stats initially and when component mounts
   useEffect(() => {
     fetchDashboardStats();
   }, []);
 
-  // Refetch when the component gains focus
   useEffect(() => {
     const handleFocus = () => {
       fetchDashboardStats();
@@ -145,8 +143,8 @@ function DashboardPage() {
                 <img
                   src="/asset/Summary.png"
                   alt="Dashboard"
-                  className={`icon ${isActive("/") ? "active" : ""}`}
-                  onClick={() => navigate("/")}
+                  className={`icon ${isActive("/dashboard") ? "active" : ""}`}
+                  onClick={() => navigate("/dashboard")}
                 />
                 <img
                   src="/asset/Tickets.png"
@@ -194,8 +192,8 @@ function DashboardPage() {
               <img
                 src="/asset/Summary.png"
                 alt="Dashboard"
-                className={`icon ${isActive("/") ? "active" : ""}`}
-                onClick={() => navigate("/")}
+                className={`icon ${isActive("/dashboard") ? "active" : ""}`}
+                onClick={() => navigate("/dashboard")}
               />
               <img
                 src="/asset/Tickets.png"
