@@ -70,7 +70,6 @@ const InventoryPage = () => {
       );
       
       setSelectedItem(updatedItem);
-      alert('Changes saved successfully!');
     } catch (error) {
       console.error('Error updating item:', error);
       alert('Error saving changes. Please try again.');
@@ -85,6 +84,8 @@ const InventoryPage = () => {
       price: selectedItem.price,
       supplier: selectedItem.supplier
     });
+    alert('Changes saved successfully!');
+    setSelectedItem(null);
   };
 
   const addNewItem = async (e) => {
