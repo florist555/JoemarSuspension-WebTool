@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Swal from "sweetalert2";
 
 function TicketsPage() {
   const [tickets, setTickets] = useState([]);
@@ -7,7 +8,6 @@ function TicketsPage() {
   const [editedTicket, setEditedTicket] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [formData, setFormData] = useState({
     customerName: "",
     customerId: "",
@@ -75,10 +75,21 @@ function TicketsPage() {
           estimatedCost: "",
           status: "Open"
         });
+        Swal.fire({
+          icon: 'success',
+          title: 'Success!',
+          text: 'Ticket created successfully!',
+          confirmButtonColor: '#5cb85c'
+        });
       }
     } catch (err) {
       console.error(err);
-      alert('Error creating ticket. Please try again.');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Error creating ticket. Please try again.',
+        confirmButtonColor: '#d9534f'
+      });
     } finally {
       setLoading(false);
     }
@@ -110,11 +121,21 @@ function TicketsPage() {
         setTickets(tickets.map(t => t._id === updatedTicket._id ? updatedTicket : t));
         setSelectedTicket(null);
         setEditedTicket(null);
-        alert('Ticket updated successfully!');
+        Swal.fire({
+          icon: 'success',
+          title: 'Updated!',
+          text: 'Ticket updated successfully!',
+          confirmButtonColor: '#5cb85c'
+        });
       }
     } catch (err) {
       console.error(err);
-      alert('Error updating ticket. Please try again.');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Error updating ticket. Please try again.',
+        confirmButtonColor: '#d9534f'
+      });
     } finally {
       setLoading(false);
     }
@@ -122,25 +143,47 @@ function TicketsPage() {
 
   const handleDeleteTicket = async () => {
     if (!editedTicket) return;
-    
-    setLoading(true);
-    try {
-      const res = await fetch(`${API_URL}/tickets/${editedTicket._id}`, {
-        method: "DELETE"
-      });
 
-      if (res.ok) {
-        setTickets(tickets.filter(t => t._id !== editedTicket._id));
-        setSelectedTicket(null);
-        setEditedTicket(null);
-        setShowDeleteConfirm(false);
-        alert('Ticket deleted successfully!');
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      html: `Do you want to delete ticket <strong>${editedTicket.ticketId}</strong>?<br/>This action cannot be undone.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d9534f',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Yes, delete it!',
+      cancelButtonText: 'No, cancel'
+    });
+
+    if (result.isConfirmed) {
+      setLoading(true);
+      try {
+        const res = await fetch(`${API_URL}/tickets/${editedTicket._id}`, {
+          method: "DELETE"
+        });
+
+        if (res.ok) {
+          setTickets(tickets.filter(t => t._id !== editedTicket._id));
+          setSelectedTicket(null);
+          setEditedTicket(null);
+          Swal.fire({
+            icon: 'success',
+            title: 'Deleted!',
+            text: 'Ticket has been deleted successfully.',
+            confirmButtonColor: '#5cb85c'
+          });
+        }
+      } catch (err) {
+        console.error(err);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Error deleting ticket. Please try again.',
+          confirmButtonColor: '#d9534f'
+        });
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error(err);
-      alert('Error deleting ticket. Please try again.');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -156,9 +199,20 @@ function TicketsPage() {
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
+      Swal.fire({
+        icon: 'success',
+        title: 'Exported!',
+        text: 'CSV file has been downloaded successfully.',
+        confirmButtonColor: '#5cb85c'
+      });
     } catch (err) {
       console.error(err);
-      alert('Error exporting CSV. Please try again.');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Error exporting CSV. Please try again.',
+        confirmButtonColor: '#d9534f'
+      });
     }
   };
 
@@ -193,12 +247,14 @@ function TicketsPage() {
       height: "100vh", 
       fontFamily: "Arial, sans-serif",
       backgroundColor: "#E8D7B5",
-      overflow: "hidden"
+      overflow: "hidden",
+      padding: "10px",
+      boxSizing: "border-box"
     }}>
       
       <div style={{
         flex: "0 0 45%",
-        padding: "20px",
+        padding: "10px",
         backgroundColor: "#F2E2B1",
         borderRight: "2px solid #BDB395",
         display: "flex",
@@ -208,8 +264,8 @@ function TicketsPage() {
         <h2 style={{ 
           textAlign: "center", 
           fontWeight: "bold", 
-          marginBottom: "20px", 
-          fontSize: "24px", 
+          marginBottom: "10px", 
+          fontSize: "22px", 
           color: "#000",
           flexShrink: 0
         }}>
@@ -219,7 +275,7 @@ function TicketsPage() {
         {editedTicket ? (
           <div style={{ 
             backgroundColor: "#fff", 
-            padding: "20px", 
+            padding: "12px", 
             borderRadius: "12px",
             boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
             overflowY: "auto",
@@ -227,9 +283,9 @@ function TicketsPage() {
             display: "flex",
             flexDirection: "column"
           }}>
-            <div style={{ flex: 1, overflowY: "auto", paddingRight: "10px" }}>
-              <div style={{ marginBottom: "15px" }}>
-                <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
+            <div style={{ flex: 1, overflowY: "auto", paddingRight: "8px" }}>
+              <div style={{ marginBottom: "10px" }}>
+                <label style={{ fontWeight: "600", color: "#555", fontSize: "12px", display: "block", marginBottom: "4px" }}>
                   Customer Name
                 </label>
                 <input
@@ -238,18 +294,18 @@ function TicketsPage() {
                   onChange={(e) => setEditedTicket({...editedTicket, customerName: e.target.value})}
                   style={{
                     width: "100%",
-                    padding: "8px",
+                    padding: "6px",
                     borderRadius: "8px",
                     border: "1px solid #BDB395",
-                    fontSize: "14px",
+                    fontSize: "13px",
                     outline: "none",
                     boxSizing: "border-box"
                   }}
                 />
               </div>
 
-              <div style={{ marginBottom: "15px" }}>
-                <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
+              <div style={{ marginBottom: "10px" }}>
+                <label style={{ fontWeight: "600", color: "#555", fontSize: "12px", display: "block", marginBottom: "4px" }}>
                   Ticket ID
                 </label>
                 <input
@@ -258,10 +314,10 @@ function TicketsPage() {
                   disabled
                   style={{
                     width: "100%",
-                    padding: "8px",
+                    padding: "6px",
                     borderRadius: "8px",
                     border: "1px solid #BDB395",
-                    fontSize: "14px",
+                    fontSize: "13px",
                     backgroundColor: "#f5f5f5",
                     color: "#888",
                     boxSizing: "border-box"
@@ -269,28 +325,32 @@ function TicketsPage() {
                 />
               </div>
 
-              <div style={{ marginBottom: "15px" }}>
-                <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
+              <div style={{ marginBottom: "10px" }}>
+                <label style={{ fontWeight: "600", color: "#555", fontSize: "12px", display: "block", marginBottom: "4px" }}>
                   Contact Number
                 </label>
                 <input
                   type="text"
                   value={editedTicket.customerContact}
-                  onChange={(e) => setEditedTicket({...editedTicket, customerContact: e.target.value})}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '').slice(0, 11);
+                    setEditedTicket({...editedTicket, customerContact: value});
+                  }}
+                  maxLength={11}
                   style={{
                     width: "100%",
-                    padding: "8px",
+                    padding: "6px",
                     borderRadius: "8px",
                     border: "1px solid #BDB395",
-                    fontSize: "14px",
+                    fontSize: "13px",
                     outline: "none",
                     boxSizing: "border-box"
                   }}
                 />
               </div>
 
-              <div style={{ marginBottom: "15px" }}>
-                <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
+              <div style={{ marginBottom: "10px" }}>
+                <label style={{ fontWeight: "600", color: "#555", fontSize: "12px", display: "block", marginBottom: "4px" }}>
                   Assigned Mechanic
                 </label>
                 <select
@@ -301,10 +361,10 @@ function TicketsPage() {
                   }}
                   style={{
                     width: "100%",
-                    padding: "8px",
+                    padding: "6px",
                     borderRadius: "8px",
                     border: "1px solid #BDB395",
-                    fontSize: "14px",
+                    fontSize: "13px",
                     outline: "none",
                     backgroundColor: "#fff",
                     cursor: "pointer",
@@ -318,8 +378,8 @@ function TicketsPage() {
                 </select>
               </div>
 
-              <div style={{ marginBottom: "15px" }}>
-                <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
+              <div style={{ marginBottom: "10px" }}>
+                <label style={{ fontWeight: "600", color: "#555", fontSize: "12px", display: "block", marginBottom: "4px" }}>
                   Description
                 </label>
                 <textarea
@@ -327,60 +387,68 @@ function TicketsPage() {
                   onChange={(e) => setEditedTicket({...editedTicket, issueDescription: e.target.value})}
                   style={{
                     width: "100%",
-                    padding: "8px",
+                    padding: "6px",
                     borderRadius: "8px",
                     border: "1px solid #BDB395",
-                    fontSize: "14px",
+                    fontSize: "13px",
                     outline: "none",
-                    minHeight: "80px",
+                    minHeight: "50px",
                     resize: "vertical",
                     boxSizing: "border-box"
                   }}
                 />
               </div>
 
-              <div style={{ marginBottom: "15px" }}>
-                <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
+              <div style={{ marginBottom: "10px" }}>
+                <label style={{ fontWeight: "600", color: "#555", fontSize: "12px", display: "block", marginBottom: "4px" }}>
                   Estimated Price (₱)
                 </label>
                 <input
-                  type="number"
+                  type="text"
                   value={editedTicket.estimatedCost}
-                  onChange={(e) => setEditedTicket({...editedTicket, estimatedCost: parseFloat(e.target.value) || 0})}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '').slice(0, 9);
+                    setEditedTicket({...editedTicket, estimatedCost: value ? parseInt(value) : 0});
+                  }}
+                  maxLength={9}
                   style={{
                     width: "100%",
-                    padding: "8px",
+                    padding: "6px",
                     borderRadius: "8px",
                     border: "1px solid #BDB395",
-                    fontSize: "14px",
+                    fontSize: "13px",
                     outline: "none",
                     boxSizing: "border-box"
                   }}
                 />
               </div>
 
-              <div style={{ marginBottom: "15px" }}>
-                <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
+              <div style={{ marginBottom: "10px" }}>
+                <label style={{ fontWeight: "600", color: "#555", fontSize: "12px", display: "block", marginBottom: "4px" }}>
                   Actual Cost (₱)
                 </label>
                 <input
-                  type="number"
+                  type="text"
                   value={editedTicket.actualCost}
-                  onChange={(e) => setEditedTicket({...editedTicket, actualCost: parseFloat(e.target.value) || 0})}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '').slice(0, 9);
+                    setEditedTicket({...editedTicket, actualCost: value ? parseInt(value) : 0});
+                  }}
+                  maxLength={9}
                   style={{
                     width: "100%",
-                    padding: "8px",
+                    padding: "6px",
                     borderRadius: "8px",
                     border: "1px solid #BDB395",
-                    fontSize: "14px",
+                    fontSize: "13px",
                     outline: "none",
                     boxSizing: "border-box"
                   }}
                 />
               </div>
 
-              <div style={{ marginBottom: "15px" }}>
-                <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
+              <div style={{ marginBottom: "10px" }}>
+                <label style={{ fontWeight: "600", color: "#555", fontSize: "12px", display: "block", marginBottom: "4px" }}>
                   Date Created
                 </label>
                 <input
@@ -389,10 +457,10 @@ function TicketsPage() {
                   disabled
                   style={{
                     width: "100%",
-                    padding: "8px",
+                    padding: "6px",
                     borderRadius: "8px",
                     border: "1px solid #BDB395",
-                    fontSize: "14px",
+                    fontSize: "13px",
                     backgroundColor: "#f5f5f5",
                     color: "#888",
                     boxSizing: "border-box"
@@ -400,8 +468,8 @@ function TicketsPage() {
                 />
               </div>
 
-              <div style={{ marginBottom: "15px" }}>
-                <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
+              <div style={{ marginBottom: "10px" }}>
+                <label style={{ fontWeight: "600", color: "#555", fontSize: "12px", display: "block", marginBottom: "4px" }}>
                   Date Modified
                 </label>
                 <input
@@ -410,10 +478,10 @@ function TicketsPage() {
                   disabled
                   style={{
                     width: "100%",
-                    padding: "8px",
+                    padding: "6px",
                     borderRadius: "8px",
                     border: "1px solid #BDB395",
-                    fontSize: "14px",
+                    fontSize: "13px",
                     backgroundColor: "#f5f5f5",
                     color: "#888",
                     boxSizing: "border-box"
@@ -422,27 +490,27 @@ function TicketsPage() {
               </div>
 
               <div style={{ 
-                padding: "15px", 
+                padding: "10px", 
                 backgroundColor: getStatusColor(editedTicket.status), 
                 borderRadius: "10px",
-                marginBottom: "15px"
+                marginBottom: "8px"
               }}>
-                <label style={{ fontWeight: "600", color: "#555", fontSize: "14px", display: "block", marginBottom: "12px", textAlign: "center" }}>
+                <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "10px", textAlign: "center" }}>
                   Status
                 </label>
-                <div style={{ display: "flex", gap: "8px", justifyContent: "center", flexWrap: "wrap" }}>
+                <div style={{ display: "flex", gap: "6px", justifyContent: "center", flexWrap: "wrap" }}>
                   {["Open", "In Progress", "Completed"].map((status) => (
                     <button
                       key={status}
                       onClick={() => setEditedTicket({...editedTicket, status})}
                       style={{
-                        padding: "8px 16px",
+                        padding: "6px 12px",
                         borderRadius: "8px",
                         border: editedTicket.status === status ? "3px solid #8B6F47" : "2px solid transparent",
                         backgroundColor: getStatusColor(status),
                         cursor: "pointer",
                         fontWeight: "bold",
-                        fontSize: "12px",
+                        fontSize: "11px",
                         transition: "all 0.2s ease"
                       }}
                     >
@@ -453,18 +521,18 @@ function TicketsPage() {
               </div>
             </div>
 
-            <div style={{ display: "flex", gap: "10px", marginTop: "10px", flexShrink: 0 }}>
+            <div style={{ display: "flex", gap: "8px", marginTop: "8px", flexShrink: 0 }}>
               <button
                 onClick={handleSaveChanges}
                 disabled={!hasChanges || loading}
                 style={{
                   flex: 1,
-                  padding: "12px",
+                  padding: "10px",
                   backgroundColor: hasChanges ? "#5cb85c" : "#ccc",
                   color: "#fff",
                   border: "none",
                   borderRadius: "8px",
-                  fontSize: "16px",
+                  fontSize: "14px",
                   fontWeight: "bold",
                   cursor: hasChanges && !loading ? "pointer" : "not-allowed",
                   transition: "all 0.2s ease"
@@ -474,16 +542,16 @@ function TicketsPage() {
               </button>
               
               <button
-                onClick={() => setShowDeleteConfirm(true)}
+                onClick={handleDeleteTicket}
                 disabled={loading}
                 style={{
                   flex: 1,
-                  padding: "12px",
+                  padding: "10px",
                   backgroundColor: "#d9534f",
                   color: "#fff",
                   border: "none",
                   borderRadius: "8px",
-                  fontSize: "16px",
+                  fontSize: "14px",
                   fontWeight: "bold",
                   cursor: loading ? "not-allowed" : "pointer",
                   transition: "all 0.2s ease"
@@ -511,34 +579,35 @@ function TicketsPage() {
 
       <div style={{
         flex: "0 0 55%",
-        padding: "20px",
+        padding: "10px 10px 10px 10px",
         backgroundColor: "#E8D7B5",
         display: "flex",
         flexDirection: "column",
-        overflow: "hidden"
+        overflow: "hidden",
+        boxSizing: "border-box"
       }}>
         <h1 style={{ 
           textAlign: "center", 
           fontWeight: "bold", 
-          marginBottom: "15px", 
-          fontSize: "28px", 
+          marginBottom: "10px", 
+          fontSize: "24px", 
           color: "#000",
           flexShrink: 0
         }}>
           Manage Tickets
         </h1>
 
-        <div style={{ display: "flex", gap: "10px", marginBottom: "15px", flexShrink: 0 }}>
+        <div style={{ display: "flex", gap: "8px", marginBottom: "10px", flexShrink: 0 }}>
           <button
             onClick={() => setShowAddForm(!showAddForm)}
             style={{
               flex: 1,
-              padding: "10px",
+              padding: "8px",
               backgroundColor: "#D4A373",
               color: "#fff",
               border: "none",
               borderRadius: "10px",
-              fontSize: "15px",
+              fontSize: "14px",
               fontWeight: "bold",
               cursor: "pointer",
               boxShadow: "0 2px 6px rgba(0,0,0,0.2)"
@@ -551,12 +620,12 @@ function TicketsPage() {
             onClick={handleExportCSV}
             style={{
               flex: 1,
-              padding: "10px",
+              padding: "8px",
               backgroundColor: "#5cb85c",
               color: "#fff",
               border: "none",
               borderRadius: "10px",
-              fontSize: "15px",
+              fontSize: "14px",
               fontWeight: "bold",
               cursor: "pointer",
               boxShadow: "0 2px 6px rgba(0,0,0,0.2)"
@@ -615,7 +684,11 @@ function TicketsPage() {
               placeholder="Contact Number"
               required
               value={formData.customerContact}
-              onChange={(e) => setFormData({...formData, customerContact: e.target.value})}
+              onChange={(e) => {
+                const value = e.target.value.replace(/\D/g, '').slice(0, 11);
+                setFormData({...formData, customerContact: value});
+              }}
+              maxLength={11}
               style={{
                 width: "100%",
                 padding: "8px",
@@ -667,10 +740,14 @@ function TicketsPage() {
             />
             
             <input
-              type="number"
+              type="text"
               placeholder="Estimated Price"
               value={formData.estimatedCost}
-              onChange={(e) => setFormData({...formData, estimatedCost: parseFloat(e.target.value) || 0})}
+              onChange={(e) => {
+                const value = e.target.value.replace(/\D/g, '').slice(0, 9);
+                setFormData({...formData, estimatedCost: value ? parseInt(value) : 0});
+              }}
+              maxLength={9}
               style={{
                 width: "100%",
                 padding: "8px",
@@ -703,34 +780,42 @@ function TicketsPage() {
           </form>
         )}
 
-        <input
-          type="text"
-          placeholder="Search by ticket ID or customer name..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          style={{
-            padding: "8px 12px",
-            borderRadius: "12px",
-            border: "1px solid #BDB395",
-            width: "100%",
-            marginBottom: "15px",
-            fontSize: "14px",
-            outline: "none",
-            boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
-            flexShrink: 0,
-            boxSizing: "border-box"
-          }}
-        />
+          <input
+            type="text"
+            placeholder="Search by ticket ID or customer name..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              padding: "8px 10px",
+              borderRadius: "12px",
+              border: "1px solid #BDB395",
+              width: "100%",
+              marginBottom: "10px",
+              fontSize: "13px",
+              outline: "none",
+              boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+              flexShrink: 0,
+              boxSizing: "border-box"
+            }}
+          />
 
         <div style={{ 
           flex: 1, 
           overflowY: "auto",
-          paddingRight: "5px"
+          paddingRight: "5px",
+          marginBottom: "10px"
         }}>
           {filteredTickets.map(ticket => (
             <div
               key={ticket._id}
-              onClick={() => setSelectedTicket(selectedTicket?._id === ticket._id ? null : ticket)}
+              onClick={() => {
+                if (selectedTicket?._id === ticket._id) {
+                  setSelectedTicket(null);
+                  setEditedTicket(null);
+                } else {
+                  setSelectedTicket(ticket);
+                }
+              }}
               style={{
                 padding: "12px",
                 marginBottom: "10px",
@@ -769,68 +854,6 @@ function TicketsPage() {
           ))}
         </div>
       </div>
-
-      {showDeleteConfirm && (
-        <div style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: "rgba(0,0,0,0.5)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 1000
-        }}>
-          <div style={{
-            backgroundColor: "#fff",
-            padding: "30px",
-            borderRadius: "12px",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-            maxWidth: "400px",
-            textAlign: "center"
-          }}>
-            <h3 style={{ marginBottom: "15px", color: "#d9534f" }}>Confirm Delete</h3>
-            <p style={{ marginBottom: "20px", color: "#666" }}>
-              Are you sure you want to delete ticket <strong>{editedTicket?.ticketId}</strong>? This action cannot be undone.
-            </p>
-            <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                style={{
-                  padding: "10px 20px",
-                  backgroundColor: "#ccc",
-                  color: "#000",
-                  border: "none",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                  fontWeight: "bold",
-                  cursor: "pointer"
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteTicket}
-                disabled={loading}
-                style={{
-                  padding: "10px 20px",
-                  backgroundColor: "#d9534f",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                  fontWeight: "bold",
-                  cursor: loading ? "not-allowed" : "pointer"
-                }}
-              >
-                {loading ? "Deleting..." : "Delete"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Swal from "sweetalert2";
 
 const InventoryPage = () => {
   const [inventoryItems, setInventoryItems] = useState([]);
@@ -6,7 +7,6 @@ const InventoryPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOrder, setSortOrder] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [newItem, setNewItem] = useState({
     partName: "",
     partNumber: "",
@@ -72,7 +72,12 @@ const InventoryPage = () => {
       setSelectedItem(updatedItem);
     } catch (error) {
       console.error('Error updating item:', error);
-      alert('Error saving changes. Please try again.');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Error saving changes. Please try again.',
+        confirmButtonColor: '#d9534f'
+      });
     }
   };
 
@@ -84,7 +89,12 @@ const InventoryPage = () => {
       price: selectedItem.price,
       supplier: selectedItem.supplier
     });
-    alert('Changes saved successfully!');
+    Swal.fire({
+      icon: 'success',
+      title: 'Updated!',
+      text: 'Changes saved successfully!',
+      confirmButtonColor: '#5cb85c'
+    });
     setSelectedItem(null);
   };
 
@@ -116,7 +126,12 @@ const InventoryPage = () => {
         const errorData = await response.json();
         console.error('Server error:', errorData);
         console.error('Full error response:', JSON.stringify(errorData, null, 2));
-        alert(`Error adding item: ${errorData.message || 'Unknown error'}`);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: `Error adding item: ${errorData.message || 'Unknown error'}`,
+          confirmButtonColor: '#d9534f'
+        });
         return;
       }
 
@@ -133,29 +148,62 @@ const InventoryPage = () => {
         category: "Other",
         description: ""
       });
+      Swal.fire({
+        icon: 'success',
+        title: 'Success!',
+        text: 'Item added successfully!',
+        confirmButtonColor: '#5cb85c'
+      });
     } catch (error) {
       console.error('Error adding item:', error);
-      alert('Error adding item. Make sure Part Number is unique.');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Error adding item. Make sure Part Number is unique.',
+        confirmButtonColor: '#d9534f'
+      });
     }
   };
 
   const handleDeleteItem = async () => {
     if (!selectedItem) return;
-    
-    try {
-      const response = await fetch(`http://localhost:5000/api/inventory/${selectedItem._id}`, {
-        method: 'DELETE'
-      });
 
-      if (response.ok) {
-        setInventoryItems(inventoryItems.filter(item => item._id !== selectedItem._id));
-        setSelectedItem(null);
-        setShowDeleteConfirm(false);
-        alert('Item deleted successfully!');
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      html: `Do you want to delete <strong>${selectedItem.partName}</strong>?<br/>This action cannot be undone.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d9534f',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Yes, delete it!',
+      cancelButtonText: 'No, cancel'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        const response = await fetch(`http://localhost:5000/api/inventory/${selectedItem._id}`, {
+          method: 'DELETE'
+        });
+
+        if (response.ok) {
+          setInventoryItems(inventoryItems.filter(item => item._id !== selectedItem._id));
+          setSelectedItem(null);
+          Swal.fire({
+            icon: 'success',
+            title: 'Deleted!',
+            text: 'Item has been deleted successfully.',
+            confirmButtonColor: '#5cb85c'
+          });
+        }
+      } catch (error) {
+        console.error('Error deleting item:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Error deleting item. Please try again.',
+          confirmButtonColor: '#d9534f'
+        });
       }
-    } catch (error) {
-      console.error('Error deleting item:', error);
-      alert('Error deleting item. Please try again.');
     }
   };
 
@@ -171,9 +219,20 @@ const InventoryPage = () => {
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
+      Swal.fire({
+        icon: 'success',
+        title: 'Exported!',
+        text: 'CSV file has been downloaded successfully.',
+        confirmButtonColor: '#5cb85c'
+      });
     } catch (error) {
       console.error('Error exporting CSV:', error);
-      alert('Error exporting CSV. Please try again.');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Error exporting CSV. Please try again.',
+        confirmButtonColor: '#d9534f'
+      });
     }
   };
 
@@ -205,12 +264,14 @@ const InventoryPage = () => {
       height: "100vh", 
       fontFamily: "Arial, sans-serif",
       backgroundColor: "#E8D7B5",
-      overflow: "hidden"
+      overflow: "hidden",
+      padding: "10px",
+      boxSizing: "border-box"
     }}>
       
       <div style={{
         flex: "0 0 45%",
-        padding: "20px",
+        padding: "10px",
         backgroundColor: "#F2E2B1",
         borderRight: "2px solid #BDB395",
         display: "flex",
@@ -220,8 +281,8 @@ const InventoryPage = () => {
         <h2 style={{ 
           textAlign: "center", 
           fontWeight: "bold", 
-          marginBottom: "20px", 
-          fontSize: "24px", 
+          marginBottom: "10px", 
+          fontSize: "22px", 
           color: "#000",
           flexShrink: 0
         }}>
@@ -231,7 +292,7 @@ const InventoryPage = () => {
         {selectedItem ? (
           <div style={{ 
             backgroundColor: "#fff", 
-            padding: "20px", 
+            padding: "12px", 
             borderRadius: "12px",
             boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
             overflowY: "auto",
@@ -239,9 +300,9 @@ const InventoryPage = () => {
             display: "flex",
             flexDirection: "column"
           }}>
-            <div style={{ flex: 1, overflowY: "auto", paddingRight: "10px" }}>
-              <div style={{ marginBottom: "15px" }}>
-                <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
+            <div style={{ flex: 1, overflowY: "auto", paddingRight: "8px" }}>
+              <div style={{ marginBottom: "10px" }}>
+                <label style={{ fontWeight: "600", color: "#555", fontSize: "12px", display: "block", marginBottom: "4px" }}>
                   Part Name
                 </label>
                 <input
@@ -250,18 +311,18 @@ const InventoryPage = () => {
                   onChange={(e) => setSelectedItem({...selectedItem, partName: e.target.value})}
                   style={{
                     width: "100%",
-                    padding: "8px",
+                    padding: "6px",
                     borderRadius: "8px",
                     border: "1px solid #BDB395",
-                    fontSize: "14px",
+                    fontSize: "13px",
                     outline: "none",
                     boxSizing: "border-box"
                   }}
                 />
               </div>
 
-              <div style={{ marginBottom: "15px" }}>
-                <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
+              <div style={{ marginBottom: "10px" }}>
+                <label style={{ fontWeight: "600", color: "#555", fontSize: "12px", display: "block", marginBottom: "4px" }}>
                   Category
                 </label>
                 <select
@@ -269,10 +330,10 @@ const InventoryPage = () => {
                   onChange={(e) => setSelectedItem({...selectedItem, category: e.target.value})}
                   style={{
                     width: "100%",
-                    padding: "8px",
+                    padding: "6px",
                     borderRadius: "8px",
                     border: "1px solid #BDB395",
-                    fontSize: "14px",
+                    fontSize: "13px",
                     outline: "none",
                     boxSizing: "border-box",
                     backgroundColor: "#fff",
@@ -285,8 +346,8 @@ const InventoryPage = () => {
                 </select>
               </div>
 
-              <div style={{ marginBottom: "15px" }}>
-                <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
+              <div style={{ marginBottom: "10px" }}>
+                <label style={{ fontWeight: "600", color: "#555", fontSize: "12px", display: "block", marginBottom: "4px" }}>
                   Price (₱)
                 </label>
                 <input
@@ -295,18 +356,18 @@ const InventoryPage = () => {
                   onChange={(e) => setSelectedItem({...selectedItem, price: parseFloat(e.target.value)})}
                   style={{
                     width: "100%",
-                    padding: "8px",
+                    padding: "6px",
                     borderRadius: "8px",
                     border: "1px solid #BDB395",
-                    fontSize: "14px",
+                    fontSize: "13px",
                     outline: "none",
                     boxSizing: "border-box"
                   }}
                 />
               </div>
 
-              <div style={{ marginBottom: "15px" }}>
-                <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
+              <div style={{ marginBottom: "10px" }}>
+                <label style={{ fontWeight: "600", color: "#555", fontSize: "12px", display: "block", marginBottom: "4px" }}>
                   Supplier
                 </label>
                 <input
@@ -315,18 +376,18 @@ const InventoryPage = () => {
                   onChange={(e) => setSelectedItem({...selectedItem, supplier: e.target.value})}
                   style={{
                     width: "100%",
-                    padding: "8px",
+                    padding: "6px",
                     borderRadius: "8px",
                     border: "1px solid #BDB395",
-                    fontSize: "14px",
+                    fontSize: "13px",
                     outline: "none",
                     boxSizing: "border-box"
                   }}
                 />
               </div>
 
-              <div style={{ marginBottom: "15px" }}>
-                <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
+              <div style={{ marginBottom: "10px" }}>
+                <label style={{ fontWeight: "600", color: "#555", fontSize: "12px", display: "block", marginBottom: "4px" }}>
                   ID Number
                 </label>
                 <input
@@ -335,10 +396,10 @@ const InventoryPage = () => {
                   disabled
                   style={{
                     width: "100%",
-                    padding: "8px",
+                    padding: "6px",
                     borderRadius: "8px",
                     border: "1px solid #BDB395",
-                    fontSize: "14px",
+                    fontSize: "13px",
                     backgroundColor: "#f5f5f5",
                     color: "#888",
                     boxSizing: "border-box"
@@ -347,8 +408,8 @@ const InventoryPage = () => {
               </div>
 
               {selectedItem.createdAt && (
-                <div style={{ marginBottom: "15px" }}>
-                  <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
+                <div style={{ marginBottom: "10px" }}>
+                  <label style={{ fontWeight: "600", color: "#555", fontSize: "12px", display: "block", marginBottom: "4px" }}>
                     Date Created
                   </label>
                   <input
@@ -357,10 +418,10 @@ const InventoryPage = () => {
                     disabled
                     style={{
                       width: "100%",
-                      padding: "8px",
+                      padding: "6px",
                       borderRadius: "8px",
                       border: "1px solid #BDB395",
-                      fontSize: "14px",
+                      fontSize: "13px",
                       backgroundColor: "#f5f5f5",
                       color: "#888",
                       boxSizing: "border-box"
@@ -370,8 +431,8 @@ const InventoryPage = () => {
               )}
 
               {selectedItem.updatedAt && (
-                <div style={{ marginBottom: "15px" }}>
-                  <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "5px" }}>
+                <div style={{ marginBottom: "10px" }}>
+                  <label style={{ fontWeight: "600", color: "#555", fontSize: "12px", display: "block", marginBottom: "4px" }}>
                     Date Modified
                   </label>
                   <input
@@ -380,10 +441,10 @@ const InventoryPage = () => {
                     disabled
                     style={{
                       width: "100%",
-                      padding: "8px",
+                      padding: "6px",
                       borderRadius: "8px",
                       border: "1px solid #BDB395",
-                      fontSize: "14px",
+                      fontSize: "13px",
                       backgroundColor: "#f5f5f5",
                       color: "#888",
                       boxSizing: "border-box"
@@ -392,8 +453,8 @@ const InventoryPage = () => {
                 </div>
               )}
 
-              <div style={{ marginTop: "20px", padding: "15px", backgroundColor: "#F2E2B1", borderRadius: "10px", marginBottom: "15px" }}>
-                <label style={{ fontWeight: "600", color: "#555", fontSize: "14px", display: "block", marginBottom: "12px", textAlign: "center" }}>
+              <div style={{ marginTop: "10px", padding: "10px", backgroundColor: "#F2E2B1", borderRadius: "10px", marginBottom: "8px" }}>
+                <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "10px", textAlign: "center" }}>
                   Current Stock
                 </label>
                 <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "15px" }}>
@@ -444,17 +505,17 @@ const InventoryPage = () => {
               </div>
             </div>
 
-            <div style={{ display: "flex", gap: "10px", marginTop: "10px", flexShrink: 0 }}>
+            <div style={{ display: "flex", gap: "8px", marginTop: "8px", flexShrink: 0 }}>
               <button
                 onClick={handleSaveChanges}
                 style={{
                   flex: 1,
-                  padding: "12px",
+                  padding: "10px",
                   backgroundColor: "#5cb85c",
                   color: "#fff",
                   border: "none",
                   borderRadius: "8px",
-                  fontSize: "16px",
+                  fontSize: "14px",
                   fontWeight: "bold",
                   cursor: "pointer",
                   transition: "all 0.2s ease"
@@ -463,15 +524,15 @@ const InventoryPage = () => {
                 Save Changes
               </button>
               <button
-                onClick={() => setShowDeleteConfirm(true)}
+                onClick={handleDeleteItem}
                 style={{
                   flex: 1,
-                  padding: "12px",
+                  padding: "10px",
                   backgroundColor: "#d9534f",
                   color: "#fff",
                   border: "none",
                   borderRadius: "8px",
-                  fontSize: "16px",
+                  fontSize: "14px",
                   fontWeight: "bold",
                   cursor: "pointer",
                   transition: "all 0.2s ease"
@@ -499,34 +560,35 @@ const InventoryPage = () => {
 
       <div style={{
         flex: "0 0 55%",
-        padding: "20px",
+        padding: "10px 10px 10px 10px",
         backgroundColor: "#E8D7B5",
         display: "flex",
         flexDirection: "column",
-        overflow: "hidden"
+        overflow: "hidden",
+        boxSizing: "border-box"
       }}>
         <h1 style={{ 
           textAlign: "center", 
           fontWeight: "bold", 
-          marginBottom: "15px", 
-          fontSize: "28px", 
+          marginBottom: "10px", 
+          fontSize: "24px", 
           color: "#000",
           flexShrink: 0
         }}>
           Inventory
         </h1>
 
-        <div style={{ display: "flex", gap: "10px", marginBottom: "15px", flexShrink: 0 }}>
+        <div style={{ display: "flex", gap: "8px", marginBottom: "10px", flexShrink: 0 }}>
           <button
             onClick={() => setShowAddForm(!showAddForm)}
             style={{
               flex: 1,
-              padding: "10px",
+              padding: "8px",
               backgroundColor: "#D4A373",
               color: "#fff",
               border: "none",
               borderRadius: "10px",
-              fontSize: "15px",
+              fontSize: "14px",
               fontWeight: "bold",
               cursor: "pointer",
               boxShadow: "0 2px 6px rgba(0,0,0,0.2)"
@@ -539,12 +601,12 @@ const InventoryPage = () => {
             onClick={handleExportCSV}
             style={{
               flex: 1,
-              padding: "10px",
+              padding: "8px",
               backgroundColor: "#5cb85c",
               color: "#fff",
               border: "none",
               borderRadius: "10px",
-              fontSize: "15px",
+              fontSize: "14px",
               fontWeight: "bold",
               cursor: "pointer",
               boxShadow: "0 2px 6px rgba(0,0,0,0.2)"
@@ -699,12 +761,12 @@ const InventoryPage = () => {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           style={{
-            padding: "8px 12px",
+            padding: "8px 10px",
             borderRadius: "12px",
             border: "1px solid #BDB395",
             width: "100%",
             marginBottom: "10px",
-            fontSize: "14px",
+            fontSize: "13px",
             outline: "none",
             boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
             flexShrink: 0,
@@ -716,12 +778,12 @@ const InventoryPage = () => {
           value={sortOrder}
           onChange={(e) => setSortOrder(e.target.value)}
           style={{
-            padding: "8px 12px",
+            padding: "8px 10px",
             borderRadius: "12px",
             border: "1px solid #BDB395",
             width: "100%",
-            marginBottom: "15px",
-            fontSize: "14px",
+            marginBottom: "10px",
+            fontSize: "13px",
             outline: "none",
             boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
             backgroundColor: "#fff",
@@ -738,7 +800,8 @@ const InventoryPage = () => {
         <div style={{ 
           flex: 1, 
           overflowY: "auto",
-          paddingRight: "5px"
+          paddingRight: "5px",
+          marginBottom: "10px"
         }}>
           {filteredAndSortedItems.map(item => (
             <div
@@ -772,67 +835,6 @@ const InventoryPage = () => {
           ))}
         </div>
       </div>
-
-      {showDeleteConfirm && (
-        <div style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: "rgba(0,0,0,0.5)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 1000
-        }}>
-          <div style={{
-            backgroundColor: "#fff",
-            padding: "30px",
-            borderRadius: "12px",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-            maxWidth: "400px",
-            textAlign: "center"
-          }}>
-            <h3 style={{ marginBottom: "15px", color: "#d9534f" }}>Confirm Delete</h3>
-            <p style={{ marginBottom: "20px", color: "#666" }}>
-              Are you sure you want to delete <strong>{selectedItem?.partName}</strong>? This action cannot be undone.
-            </p>
-            <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                style={{
-                  padding: "10px 20px",
-                  backgroundColor: "#ccc",
-                  color: "#000",
-                  border: "none",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                  fontWeight: "bold",
-                  cursor: "pointer"
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteItem}
-                style={{
-                  padding: "10px 20px",
-                  backgroundColor: "#d9534f",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                  fontWeight: "bold",
-                  cursor: "pointer"
-                }}
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -1,5 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import Swal from "sweetalert2";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -29,6 +33,8 @@ function DashboardPage() {
   const [showIcons, setShowIcons] = useState(true);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const doughnutRef = useRef(null);
+  const barRef = useRef(null);
 
   useEffect(() => {
     fetchDashboardStats();
@@ -64,6 +70,400 @@ function DashboardPage() {
   };
 
   const isActive = (path) => location.pathname === path;
+
+  const getCurrentMonthYear = () => {
+    const date = new Date();
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  };
+
+  const handleExportClick = async () => {
+    const result = await Swal.fire({
+      title: 'Export Monthly Report',
+      text: 'Choose export format:',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#5cb85c',
+      cancelButtonColor: '#d9534f',
+      confirmButtonText: 'PDF (Printable)',
+      cancelButtonText: 'CSV (Excel)',
+      showCloseButton: true,
+    });
+
+    if (result.isConfirmed) {
+      exportToPDF();
+    } else if (result.dismiss === Swal.DismissReason.cancel) {
+      exportToCSV();
+    }
+  };
+
+  const exportToPDF = async () => {
+    try {
+      const doc = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      let yPos = 20;
+
+      const logo = new Image();
+      logo.src = '/asset/W_Mechanic.png';
+      
+      logo.onload = () => {
+        doc.addImage(logo, 'PNG', 15, yPos, 30, 30);
+        
+        doc.setFontSize(20);
+        doc.setFont(undefined, 'bold');
+        doc.text('Joemar Suspension', 50, yPos + 10);
+        
+        doc.setFontSize(14);
+        doc.setFont(undefined, 'normal');
+        doc.text('Monthly Report', 50, yPos + 18);
+        
+        doc.setFontSize(10);
+        doc.text(getCurrentMonthYear(), 50, yPos + 25);
+        
+        doc.setLineWidth(0.5);
+        doc.line(15, yPos + 35, pageWidth - 15, yPos + 35);
+        
+        yPos = yPos + 45;
+
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.text('Financial Summary', 15, yPos);
+        yPos += 7;
+        
+        autoTable(doc, {
+          startY: yPos,
+          head: [['Metric', 'Value']],
+          body: [
+            ['Monthly Revenue', `PHP ${stats?.revenue?.thisMonth?.toLocaleString() || 0}`],
+            ['Growth vs Last Month', `${parseFloat(stats?.revenue?.growthPercentage) >= 0 ? '+' : ''}${Math.abs(stats?.revenue?.growthPercentage)}%`],
+            ['Low Stock Alerts', `${stats?.lowStockItems?.length || 0} items`],
+            ['Active Services Today', `${stats?.todaysActiveTickets?.length || 0} tickets`],
+          ],
+          theme: 'grid',
+          headStyles: { fillColor: [189, 179, 149] },
+          margin: { left: 15, right: 15 },
+        });
+        
+        yPos = doc.lastAutoTable.finalY + 10;
+
+        if (yPos > pageHeight - 100) {
+          doc.addPage();
+          yPos = 20;
+        }
+
+        if (doughnutRef.current) {
+          const doughnutImage = doughnutRef.current.toBase64Image();
+          
+          doc.setFontSize(12);
+          doc.setFont(undefined, 'bold');
+          doc.text('Ticket Status Distribution', 15, yPos);
+          yPos += 10;
+          
+          const chartWidth = pageWidth - 30;
+          const chartHeight = 100;
+          const chartX = (pageWidth - chartWidth) / 2;
+          
+          doc.addImage(doughnutImage, 'PNG', chartX, yPos, chartWidth, chartHeight);
+          yPos += chartHeight + 15;
+        }
+
+        if (yPos > pageHeight - 120) {
+          doc.addPage();
+          yPos = 20;
+        }
+
+        if (barRef.current) {
+          const barImage = barRef.current.toBase64Image();
+          
+          doc.setFontSize(12);
+          doc.setFont(undefined, 'bold');
+          doc.text('Inventory by Category', 15, yPos);
+          yPos += 10;
+          
+          const chartWidth = pageWidth - 30;
+          const chartHeight = 100;
+          const chartX = (pageWidth - chartWidth) / 2;
+          
+          doc.addImage(barImage, 'PNG', chartX, yPos, chartWidth, chartHeight);
+          yPos += chartHeight + 15;
+        }
+
+        if (yPos > pageHeight - 80) {
+          doc.addPage();
+          yPos = 20;
+        }
+
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.text('Ticket Status Breakdown', 15, yPos);
+        yPos += 7;
+        
+        const ticketStatusBody = [
+          ['Open', stats?.ticketsByStatus?.Open || 0],
+          ['Pending', stats?.ticketsByStatus?.Pending || 0],
+          ['In Progress', stats?.ticketsByStatus?.["In Progress"] || 0],
+          ['Completed', stats?.ticketsByStatus?.Completed || 0],
+          ['Closed', stats?.ticketsByStatus?.Closed || 0],
+        ];
+        
+        autoTable(doc, {
+          startY: yPos,
+          head: [['Status', 'Count']],
+          body: ticketStatusBody,
+          theme: 'grid',
+          headStyles: { fillColor: [189, 179, 149] },
+          margin: { left: 15, right: 15 },
+        });
+
+        yPos = doc.lastAutoTable.finalY + 15;
+
+        const inventoryCategoryBody = stats?.inventoryByCategory?.map((item) => [
+          item._id,
+          item.count,
+        ]) || [];
+
+        if (yPos > pageHeight - 80) {
+          doc.addPage();
+          yPos = 20;
+        }
+
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.text('Inventory by Category Breakdown', 15, yPos);
+        yPos += 7;
+
+        autoTable(doc, {
+          startY: yPos,
+          head: [['Category', 'Count']],
+          body: inventoryCategoryBody,
+          theme: 'grid',
+          headStyles: { fillColor: [189, 179, 149] },
+          margin: { left: 15, right: 15 },
+        });
+
+        yPos = doc.lastAutoTable.finalY + 15;
+
+        if (yPos > pageHeight - 80) {
+          doc.addPage();
+          yPos = 20;
+        }
+
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.text("Today's Active Services", 15, yPos);
+        yPos += 7;
+
+        if (stats?.todaysActiveTickets?.length > 0) {
+          const activeServicesBody = stats.todaysActiveTickets.map((ticket) => [
+            ticket.ticketId,
+            ticket.customerName,
+            `${ticket.vehicleInfo?.make || 'N/A'} ${ticket.vehicleInfo?.model || ''}`,
+            ticket.assignedMechanic?.name || "Unassigned",
+            ticket.status,
+          ]);
+
+          autoTable(doc, {
+            startY: yPos,
+            head: [['Ticket ID', 'Customer', 'Vehicle', 'Mechanic', 'Status']],
+            body: activeServicesBody,
+            theme: 'grid',
+            headStyles: { fillColor: [189, 179, 149] },
+            margin: { left: 15, right: 15 },
+          });
+          
+          yPos = doc.lastAutoTable.finalY + 10;
+        } else {
+          doc.setFont(undefined, 'normal');
+          doc.setFontSize(10);
+          doc.text('No active services for today', 15, yPos);
+          yPos += 10;
+        }
+
+        if (yPos > pageHeight - 80) {
+          doc.addPage();
+          yPos = 20;
+        }
+
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.text('Low Stock Items', 15, yPos);
+        yPos += 7;
+
+        if (stats?.lowStockItems?.length > 0) {
+          const lowStockBody = stats.lowStockItems.map((item) => [
+            item.partName,
+            item.partNumber,
+            item.quantity.toString(),
+            item.minStockLevel.toString(),
+            item.category,
+          ]);
+
+          autoTable(doc, {
+            startY: yPos,
+            head: [['Part Name', 'Part Number', 'Quantity', 'Min Level', 'Category']],
+            body: lowStockBody,
+            theme: 'grid',
+            headStyles: { fillColor: [189, 179, 149] },
+            margin: { left: 15, right: 15 },
+          });
+        } else {
+          doc.setFont(undefined, 'normal');
+          doc.setFontSize(10);
+          doc.text('All items are well stocked', 15, yPos);
+        }
+
+        const pageCount = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+          doc.setPage(i);
+          doc.setFontSize(8);
+          doc.setFont(undefined, 'normal');
+          doc.text(
+            `Page ${i} of ${pageCount}`,
+            pageWidth / 2,
+            pageHeight - 10,
+            { align: 'center' }
+          );
+        }
+
+        doc.save(`Joemar_Suspension_Monthly_Report_${getCurrentMonthYear().replace(' ', '_')}.pdf`);
+        
+        Swal.fire({
+          icon: 'success',
+          title: 'Exported!',
+          text: 'PDF report has been downloaded successfully.',
+          confirmButtonColor: '#5cb85c'
+        });
+      };
+
+      logo.onerror = () => {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Failed to load company logo. PDF export cancelled.',
+          confirmButtonColor: '#d9534f'
+        });
+      };
+
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Error exporting PDF. Please try again.',
+        confirmButtonColor: '#d9534f'
+      });
+    }
+  };
+
+  const exportToCSV = () => {
+    try {
+      const wb = XLSX.utils.book_new();
+
+      const detailedData = [];
+      
+      detailedData.push(['JOEMAR SUSPENSION - MONTHLY REPORT']);
+      detailedData.push([getCurrentMonthYear()]);
+      detailedData.push([]);
+      
+      detailedData.push(['TICKET STATUS BREAKDOWN']);
+      detailedData.push(['Status', 'Count']);
+      detailedData.push(['Open', stats?.ticketsByStatus?.Open || 0]);
+      detailedData.push(['Pending', stats?.ticketsByStatus?.Pending || 0]);
+      detailedData.push(['In Progress', stats?.ticketsByStatus?.["In Progress"] || 0]);
+      detailedData.push(['Completed', stats?.ticketsByStatus?.Completed || 0]);
+      detailedData.push(['Closed', stats?.ticketsByStatus?.Closed || 0]);
+      detailedData.push([]);
+      
+      detailedData.push(['INVENTORY BY CATEGORY']);
+      detailedData.push(['Category', 'Count']);
+      stats?.inventoryByCategory?.forEach((item) => {
+        detailedData.push([item._id, item.count]);
+      });
+      detailedData.push([]);
+      
+      detailedData.push(["TODAY'S ACTIVE SERVICES"]);
+      if (stats?.todaysActiveTickets?.length > 0) {
+        detailedData.push(['Ticket ID', 'Customer', 'Vehicle', 'Mechanic', 'Status']);
+        stats.todaysActiveTickets.forEach((ticket) => {
+          detailedData.push([
+            ticket.ticketId,
+            ticket.customerName,
+            `${ticket.vehicleInfo?.make || 'N/A'} ${ticket.vehicleInfo?.model || ''}`,
+            ticket.assignedMechanic?.name || "Unassigned",
+            ticket.status,
+          ]);
+        });
+      } else {
+        detailedData.push(['No active services for today']);
+      }
+      detailedData.push([]);
+      
+      detailedData.push(['LOW STOCK ITEMS']);
+      if (stats?.lowStockItems?.length > 0) {
+        detailedData.push(['Part Name', 'Part Number', 'Quantity', 'Min Level', 'Category']);
+        stats.lowStockItems.forEach((item) => {
+          detailedData.push([
+            item.partName,
+            item.partNumber,
+            item.quantity,
+            item.minStockLevel,
+            item.category,
+          ]);
+        });
+      } else {
+        detailedData.push(['All items are well stocked']);
+      }
+
+      const ws1 = XLSX.utils.aoa_to_sheet(detailedData);
+      XLSX.utils.book_append_sheet(wb, ws1, 'Detailed Data');
+
+      const summaryData = [];
+      summaryData.push(['JOEMAR SUSPENSION - DASHBOARD SUMMARY']);
+      summaryData.push([getCurrentMonthYear()]);
+      summaryData.push([]);
+      summaryData.push(['FINANCIAL SUMMARY']);
+      summaryData.push(['Metric', 'Value']);
+      summaryData.push(['Monthly Revenue', `₱${stats?.revenue?.thisMonth?.toLocaleString() || 0}`]);
+      summaryData.push(['Growth vs Last Month', `${parseFloat(stats?.revenue?.growthPercentage) >= 0 ? '+' : ''}${Math.abs(stats?.revenue?.growthPercentage)}%`]);
+      summaryData.push(['Low Stock Alerts', `${stats?.lowStockItems?.length || 0} items`]);
+      summaryData.push(['Active Services Today', `${stats?.todaysActiveTickets?.length || 0} tickets`]);
+      summaryData.push([]);
+      summaryData.push(['TICKET STATUS TOTALS']);
+      summaryData.push(['Status', 'Count']);
+      summaryData.push(['Open', stats?.ticketsByStatus?.Open || 0]);
+      summaryData.push(['Pending', stats?.ticketsByStatus?.Pending || 0]);
+      summaryData.push(['In Progress', stats?.ticketsByStatus?.["In Progress"] || 0]);
+      summaryData.push(['Completed', stats?.ticketsByStatus?.Completed || 0]);
+      summaryData.push(['Closed', stats?.ticketsByStatus?.Closed || 0]);
+      summaryData.push([]);
+      summaryData.push(['INVENTORY CATEGORY TOTALS']);
+      summaryData.push(['Category', 'Count']);
+      stats?.inventoryByCategory?.forEach((item) => {
+        summaryData.push([item._id, item.count]);
+      });
+
+      const ws2 = XLSX.utils.aoa_to_sheet(summaryData);
+      XLSX.utils.book_append_sheet(wb, ws2, 'Summary');
+
+      XLSX.writeFile(wb, `Joemar_Suspension_Monthly_Report_${getCurrentMonthYear().replace(' ', '_')}.xlsx`);
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Exported!',
+        text: 'CSV file has been downloaded successfully.',
+        confirmButtonColor: '#5cb85c'
+      });
+
+    } catch (error) {
+      console.error('Error exporting CSV:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Error exporting CSV. Please try again.',
+        confirmButtonColor: '#d9534f'
+      });
+    }
+  };
 
   const ticketStatusData = {
     labels: ["Open", "Pending", "In Progress", "Completed", "Closed"],
@@ -220,7 +620,17 @@ function DashboardPage() {
         </div>
       </div>
       <div className="dashboard-content">
-        <h1 className="dashboard-title">Dashboard Overview</h1>
+        <div className="dashboard-header">
+          <h1 className="dashboard-title">Dashboard Overview</h1>
+          <button className="export-button" onClick={handleExportClick} title="Export Monthly Report">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span>Export Report</span>
+          </button>
+        </div>
 
         <div className="stats-grid">
           <div className="stat-card revenue-card">
@@ -248,14 +658,14 @@ function DashboardPage() {
           <div className="chart-card">
             <h3>Ticket Status Distribution</h3>
             <div className="chart-container">
-              <Doughnut data={ticketStatusData} options={chartOptions} />
+              <Doughnut ref={doughnutRef} data={ticketStatusData} options={chartOptions} />
             </div>
           </div>
 
           <div className="chart-card">
             <h3>Inventory by Category</h3>
             <div className="chart-container">
-              <Bar data={inventoryCategoryData} options={barChartOptions} />
+              <Bar ref={barRef} data={inventoryCategoryData} options={barChartOptions} />
             </div>
           </div>
         </div>
