@@ -134,7 +134,7 @@ function DashboardPage() {
           startY: yPos,
           head: [['Metric', 'Value']],
           body: [
-            ['Monthly Revenue', `PHP ${stats?.revenue?.thisMonth?.toLocaleString() || 0}`],
+            ['Monthly Revenue', `₱${stats?.revenue?.thisMonth?.toLocaleString() || 0}`],
             ['Growth vs Last Month', `${parseFloat(stats?.revenue?.growthPercentage) >= 0 ? '+' : ''}${Math.abs(stats?.revenue?.growthPercentage)}%`],
             ['Low Stock Alerts', `${stats?.lowStockItems?.length || 0} items`],
             ['Active Services Today', `${stats?.todaysActiveTickets?.length || 0} tickets`],
@@ -257,14 +257,13 @@ function DashboardPage() {
           const activeServicesBody = stats.todaysActiveTickets.map((ticket) => [
             ticket.ticketId,
             ticket.customerName,
-            `${ticket.vehicleInfo?.make || 'N/A'} ${ticket.vehicleInfo?.model || ''}`,
             ticket.assignedMechanic?.name || "Unassigned",
             ticket.status,
           ]);
 
           autoTable(doc, {
             startY: yPos,
-            head: [['Ticket ID', 'Customer', 'Vehicle', 'Mechanic', 'Status']],
+            head: [['Ticket ID', 'Customer', 'Mechanic', 'Status']],
             body: activeServicesBody,
             theme: 'grid',
             headStyles: { fillColor: [189, 179, 149] },
@@ -325,7 +324,7 @@ function DashboardPage() {
           );
         }
 
-        doc.save(`Joemar_Suspension_Monthly_Report_${getCurrentMonthYear().replace(' ', '_')}.pdf`);
+        doc.save(`Joemar Suspension Monthly Report ${getCurrentMonthYear().replace(' ', '_')}.pdf`);
         
         Swal.fire({
           icon: 'success',
@@ -383,12 +382,11 @@ function DashboardPage() {
       
       detailedData.push(["TODAY'S ACTIVE SERVICES"]);
       if (stats?.todaysActiveTickets?.length > 0) {
-        detailedData.push(['Ticket ID', 'Customer', 'Vehicle', 'Mechanic', 'Status']);
+        detailedData.push(['Ticket ID', 'Customer', 'Mechanic', 'Status']);
         stats.todaysActiveTickets.forEach((ticket) => {
           detailedData.push([
             ticket.ticketId,
             ticket.customerName,
-            `${ticket.vehicleInfo?.make || 'N/A'} ${ticket.vehicleInfo?.model || ''}`,
             ticket.assignedMechanic?.name || "Unassigned",
             ticket.status,
           ]);
@@ -680,7 +678,6 @@ function DashboardPage() {
                     <tr>
                       <th>Ticket ID</th>
                       <th>Customer</th>
-                      <th>Vehicle</th>
                       <th>Mechanic</th>
                       <th>Status</th>
                     </tr>
@@ -690,7 +687,6 @@ function DashboardPage() {
                       <tr key={ticket._id}>
                         <td>{ticket.ticketId}</td>
                         <td>{ticket.customerName}</td>
-                        <td>{ticket.vehicleInfo?.make} {ticket.vehicleInfo?.model}</td>
                         <td>{ticket.assignedMechanic?.name || "Unassigned"}</td>
                         <td><span className="status-badge in-progress">{ticket.status}</span></td>
                       </tr>

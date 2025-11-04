@@ -2,7 +2,7 @@
   display: flex;
   min-height: 100vh;
   width: 100%;
-  background-color: #F6F0F0;
+  background-color: #999999;
   overflow: hidden;
 }
 
@@ -58,7 +58,7 @@
 
 .dashboard-content {
   flex: 1;
-  background-color: #F2E2B1;
+  background-color: #999999;
   border-left: 3px solid #D5C7A3;
   padding: 30px;
   display: flex;
@@ -99,7 +99,7 @@
 
 .export-button:hover {
   background-color: #d9534f;
-  color: #F5F5F5;
+  color: #A9A9A9;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(217, 83, 79, 0.3);
 }
@@ -129,7 +129,7 @@
 }
 
 .stat-card {
-  background-color: #E8E8E8;
+  background-color: #A9A9A9;
   padding: 25px;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -142,7 +142,7 @@
 }
 
 .stat-card h3 {
-  font-size: 14px;
+  font-size: 16px;
   color: #666;
   margin: 0 0 15px 0;
   font-weight: 600;
@@ -161,7 +161,7 @@
 .revenue-amount {
   font-size: 36px;
   font-weight: bold;
-  color: #F5F5F5;
+  color: #4CAF50;
   margin-bottom: 10px;
   letter-spacing: normal;
   word-spacing: normal;
@@ -205,7 +205,7 @@
 }
 
 .chart-card {
-  background-color: #E8E8E8;
+  background-color: #A9A9A9;
   padding: 25px;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -231,7 +231,7 @@
 }
 
 .table-card {
-  background-color: #E8E8E8;
+  background-color: #A9A9A9;
   padding: 25px;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -245,7 +245,7 @@
 }
 
 .table-container {
-  overflow-x: auto;
+  overflow-x: hidden;
   max-height: 400px;
   overflow-y: auto;
 }
@@ -253,9 +253,10 @@
 .dashboard-table {
   width: 100%;
   border-collapse: collapse;
-  background-color: #F5F5F5;
+  background-color: #A9A9A9;
   border-radius: 8px;
   overflow: hidden;
+  table-layout: fixed;
 }
 
 .dashboard-table thead {
@@ -273,21 +274,26 @@
   color: #333;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  font-family: inherit;
 }
 
 .dashboard-table tbody tr {
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid #8B8B8B;
   transition: background-color 0.2s;
 }
 
 .dashboard-table tbody tr:hover {
-  background-color: #D8D8D8;
+  background-color: #999999;
 }
 
 .dashboard-table td {
   padding: 12px 15px;
   font-size: 14px;
   color: #333;
+  font-family: 'Bodoni MT', serif;
+  word-wrap: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .status-badge {
@@ -301,7 +307,7 @@
 
 .status-badge.in-progress {
   background-color: #4ECDC4;
-  color: #F5F5F5;
+  color: #A9A9A9;
 }
 
 .low-stock {
@@ -313,7 +319,10 @@
   text-align: center;
   padding: 40px;
   color: #999;
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 @media (max-width: 1200px) {
