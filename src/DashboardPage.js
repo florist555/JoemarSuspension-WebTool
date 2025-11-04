@@ -15,6 +15,7 @@ import {
   Legend,
 } from "chart.js";
 import { Doughnut, Bar } from "react-chartjs-2";
+import { useLogout } from "./LogoutHandler";
 import "./DashboardPage.css";
 
 ChartJS.register(
@@ -35,6 +36,7 @@ function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const doughnutRef = useRef(null);
   const barRef = useRef(null);
+  const handleLogout = useLogout();
 
   useEffect(() => {
     fetchDashboardStats();
@@ -45,8 +47,8 @@ function DashboardPage() {
       fetchDashboardStats();
     };
 
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
   }, []);
 
   const fetchDashboardStats = async () => {
@@ -61,10 +63,6 @@ function DashboardPage() {
     }
   };
 
-  const handleLogout = () => {
-    navigate("/");
-  };
-
   const toggleIcons = () => {
     setShowIcons(!showIcons);
   };
@@ -73,19 +71,19 @@ function DashboardPage() {
 
   const getCurrentMonthYear = () => {
     const date = new Date();
-    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
   };
 
   const handleExportClick = async () => {
     const result = await Swal.fire({
-      title: 'Export Monthly Report',
-      text: 'Choose export format:',
-      icon: 'question',
+      title: "Export Monthly Report",
+      text: "Choose export format:",
+      icon: "question",
       showCancelButton: true,
-      confirmButtonColor: '#5cb85c',
-      cancelButtonColor: '#d9534f',
-      confirmButtonText: 'PDF (Printable)',
-      cancelButtonText: 'CSV (Excel)',
+      confirmButtonColor: "#5cb85c",
+      cancelButtonColor: "#d9534f",
+      confirmButtonText: "PDF (Printable)",
+      cancelButtonText: "CSV (Excel)",
       showCloseButton: true,
     });
 
@@ -98,52 +96,63 @@ function DashboardPage() {
 
   const exportToPDF = async () => {
     try {
-      const doc = new jsPDF('p', 'mm', 'a4');
+      const doc = new jsPDF("p", "mm", "a4");
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
       let yPos = 20;
 
       const logo = new Image();
-      logo.src = '/asset/W_Mechanic.png';
-      
+      logo.src = "/asset/W_Mechanic.png";
+
       logo.onload = () => {
-        doc.addImage(logo, 'PNG', 15, yPos, 30, 30);
-        
+        doc.addImage(logo, "PNG", 15, yPos, 30, 30);
+
         doc.setFontSize(20);
-        doc.setFont(undefined, 'bold');
-        doc.text('Joemar Suspension', 50, yPos + 10);
-        
+        doc.setFont(undefined, "bold");
+        doc.text("Joemar Suspension", 50, yPos + 10);
+
         doc.setFontSize(14);
-        doc.setFont(undefined, 'normal');
-        doc.text('Monthly Report', 50, yPos + 18);
-        
+        doc.setFont(undefined, "normal");
+        doc.text("Monthly Report", 50, yPos + 18);
+
         doc.setFontSize(10);
         doc.text(getCurrentMonthYear(), 50, yPos + 25);
-        
+
         doc.setLineWidth(0.5);
         doc.line(15, yPos + 35, pageWidth - 15, yPos + 35);
-        
+
         yPos = yPos + 45;
 
         doc.setFontSize(12);
-        doc.setFont(undefined, 'bold');
-        doc.text('Financial Summary', 15, yPos);
+        doc.setFont(undefined, "bold");
+        doc.text("Financial Summary", 15, yPos);
         yPos += 7;
-        
+
         autoTable(doc, {
           startY: yPos,
-          head: [['Metric', 'Value']],
+          head: [["Metric", "Value"]],
           body: [
-            ['Monthly Revenue', `₱${stats?.revenue?.thisMonth?.toLocaleString() || 0}`],
-            ['Growth vs Last Month', `${parseFloat(stats?.revenue?.growthPercentage) >= 0 ? '+' : ''}${Math.abs(stats?.revenue?.growthPercentage)}%`],
-            ['Low Stock Alerts', `${stats?.lowStockItems?.length || 0} items`],
-            ['Active Services Today', `${stats?.todaysActiveTickets?.length || 0} tickets`],
+            [
+              "Monthly Revenue",
+              `₱${stats?.revenue?.thisMonth?.toLocaleString() || 0}`,
+            ],
+            [
+              "Growth vs Last Month",
+              `${parseFloat(stats?.revenue?.growthPercentage) >= 0 ? "+" : ""}${Math.abs(
+                stats?.revenue?.growthPercentage
+              )}%`,
+            ],
+            ["Low Stock Alerts", `${stats?.lowStockItems?.length || 0} items`],
+            [
+              "Active Services Today",
+              `${stats?.todaysActiveTickets?.length || 0} tickets`,
+            ],
           ],
-          theme: 'grid',
+          theme: "grid",
           headStyles: { fillColor: [189, 179, 149] },
           margin: { left: 15, right: 15 },
         });
-        
+
         yPos = doc.lastAutoTable.finalY + 10;
 
         if (yPos > pageHeight - 100) {
@@ -153,17 +162,17 @@ function DashboardPage() {
 
         if (doughnutRef.current) {
           const doughnutImage = doughnutRef.current.toBase64Image();
-          
+
           doc.setFontSize(12);
-          doc.setFont(undefined, 'bold');
-          doc.text('Ticket Status Distribution', 15, yPos);
+          doc.setFont(undefined, "bold");
+          doc.text("Ticket Status Distribution", 15, yPos);
           yPos += 10;
-          
+
           const chartWidth = pageWidth - 30;
           const chartHeight = 100;
           const chartX = (pageWidth - chartWidth) / 2;
-          
-          doc.addImage(doughnutImage, 'PNG', chartX, yPos, chartWidth, chartHeight);
+
+          doc.addImage(doughnutImage, "PNG", chartX, yPos, chartWidth, chartHeight);
           yPos += chartHeight + 15;
         }
 
@@ -174,17 +183,17 @@ function DashboardPage() {
 
         if (barRef.current) {
           const barImage = barRef.current.toBase64Image();
-          
+
           doc.setFontSize(12);
-          doc.setFont(undefined, 'bold');
-          doc.text('Inventory by Category', 15, yPos);
+          doc.setFont(undefined, "bold");
+          doc.text("Inventory by Category", 15, yPos);
           yPos += 10;
-          
+
           const chartWidth = pageWidth - 30;
           const chartHeight = 100;
           const chartX = (pageWidth - chartWidth) / 2;
-          
-          doc.addImage(barImage, 'PNG', chartX, yPos, chartWidth, chartHeight);
+
+          doc.addImage(barImage, "PNG", chartX, yPos, chartWidth, chartHeight);
           yPos += chartHeight + 15;
         }
 
@@ -194,33 +203,31 @@ function DashboardPage() {
         }
 
         doc.setFontSize(12);
-        doc.setFont(undefined, 'bold');
-        doc.text('Ticket Status Breakdown', 15, yPos);
+        doc.setFont(undefined, "bold");
+        doc.text("Ticket Status Breakdown", 15, yPos);
         yPos += 7;
-        
+
         const ticketStatusBody = [
-          ['Open', stats?.ticketsByStatus?.Open || 0],
-          ['Pending', stats?.ticketsByStatus?.Pending || 0],
-          ['In Progress', stats?.ticketsByStatus?.["In Progress"] || 0],
-          ['Completed', stats?.ticketsByStatus?.Completed || 0],
-          ['Closed', stats?.ticketsByStatus?.Closed || 0],
+          ["Open", stats?.ticketsByStatus?.Open || 0],
+          ["Pending", stats?.ticketsByStatus?.Pending || 0],
+          ["In Progress", stats?.ticketsByStatus?.["In Progress"] || 0],
+          ["Completed", stats?.ticketsByStatus?.Completed || 0],
+          ["Closed", stats?.ticketsByStatus?.Closed || 0],
         ];
-        
+
         autoTable(doc, {
           startY: yPos,
-          head: [['Status', 'Count']],
+          head: [["Status", "Count"]],
           body: ticketStatusBody,
-          theme: 'grid',
+          theme: "grid",
           headStyles: { fillColor: [189, 179, 149] },
           margin: { left: 15, right: 15 },
         });
 
         yPos = doc.lastAutoTable.finalY + 15;
 
-        const inventoryCategoryBody = stats?.inventoryByCategory?.map((item) => [
-          item._id,
-          item.count,
-        ]) || [];
+        const inventoryCategoryBody =
+          stats?.inventoryByCategory?.map((item) => [item._id, item.count]) || [];
 
         if (yPos > pageHeight - 80) {
           doc.addPage();
@@ -228,15 +235,15 @@ function DashboardPage() {
         }
 
         doc.setFontSize(12);
-        doc.setFont(undefined, 'bold');
-        doc.text('Inventory by Category Breakdown', 15, yPos);
+        doc.setFont(undefined, "bold");
+        doc.text("Inventory by Category Breakdown", 15, yPos);
         yPos += 7;
 
         autoTable(doc, {
           startY: yPos,
-          head: [['Category', 'Count']],
+          head: [["Category", "Count"]],
           body: inventoryCategoryBody,
-          theme: 'grid',
+          theme: "grid",
           headStyles: { fillColor: [189, 179, 149] },
           margin: { left: 15, right: 15 },
         });
@@ -249,7 +256,7 @@ function DashboardPage() {
         }
 
         doc.setFontSize(12);
-        doc.setFont(undefined, 'bold');
+        doc.setFont(undefined, "bold");
         doc.text("Today's Active Services", 15, yPos);
         yPos += 7;
 
@@ -263,18 +270,18 @@ function DashboardPage() {
 
           autoTable(doc, {
             startY: yPos,
-            head: [['Ticket ID', 'Customer', 'Mechanic', 'Status']],
+            head: [["Ticket ID", "Customer", "Mechanic", "Status"]],
             body: activeServicesBody,
-            theme: 'grid',
+            theme: "grid",
             headStyles: { fillColor: [189, 179, 149] },
             margin: { left: 15, right: 15 },
           });
-          
+
           yPos = doc.lastAutoTable.finalY + 10;
         } else {
-          doc.setFont(undefined, 'normal');
+          doc.setFont(undefined, "normal");
           doc.setFontSize(10);
-          doc.text('No active services for today', 15, yPos);
+          doc.text("No active services for today", 15, yPos);
           yPos += 10;
         }
 
@@ -284,8 +291,8 @@ function DashboardPage() {
         }
 
         doc.setFontSize(12);
-        doc.setFont(undefined, 'bold');
-        doc.text('Low Stock Items', 15, yPos);
+        doc.setFont(undefined, "bold");
+        doc.text("Low Stock Items", 15, yPos);
         yPos += 7;
 
         if (stats?.lowStockItems?.length > 0) {
@@ -299,57 +306,57 @@ function DashboardPage() {
 
           autoTable(doc, {
             startY: yPos,
-            head: [['Part Name', 'Part Number', 'Quantity', 'Min Level', 'Category']],
+            head: [["Part Name", "Part Number", "Quantity", "Min Level", "Category"]],
             body: lowStockBody,
-            theme: 'grid',
+            theme: "grid",
             headStyles: { fillColor: [189, 179, 149] },
             margin: { left: 15, right: 15 },
           });
         } else {
-          doc.setFont(undefined, 'normal');
+          doc.setFont(undefined, "normal");
           doc.setFontSize(10);
-          doc.text('All items are well stocked', 15, yPos);
+          doc.text("All items are well stocked", 15, yPos);
         }
 
         const pageCount = doc.internal.getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
           doc.setPage(i);
           doc.setFontSize(8);
-          doc.setFont(undefined, 'normal');
-          doc.text(
-            `Page ${i} of ${pageCount}`,
-            pageWidth / 2,
-            pageHeight - 10,
-            { align: 'center' }
-          );
+          doc.setFont(undefined, "normal");
+          doc.text(`Page ${i} of ${pageCount}`, pageWidth / 2, pageHeight - 10, {
+            align: "center",
+          });
         }
 
-        doc.save(`Joemar Suspension Monthly Report ${getCurrentMonthYear().replace(' ', '_')}.pdf`);
-        
+        doc.save(
+          `Joemar Suspension Monthly Report ${getCurrentMonthYear()
+            .replace(" ", "_")
+            .replace(",", "")}.pdf`
+        );
+
         Swal.fire({
-          icon: 'success',
-          title: 'Exported!',
-          text: 'PDF report has been downloaded successfully.',
-          confirmButtonColor: '#5cb85c'
+          icon: "success",
+          title: "Exported!",
+          text: "PDF report has been downloaded successfully.",
+          confirmButtonColor: "#5cb85c",
         });
       };
 
       logo.onerror = () => {
         Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'Failed to load company logo. PDF export cancelled.',
-          confirmButtonColor: '#d9534f'
+          icon: "error",
+          title: "Error",
+          text: "Failed to load company logo. PDF export cancelled.",
+          confirmButtonColor: "#d9534f",
         });
       };
-
     } catch (error) {
-      console.error('Error exporting PDF:', error);
+      console.error("Error exporting PDF:", error);
       Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'Error exporting PDF. Please try again.',
-        confirmButtonColor: '#d9534f'
+        icon: "error",
+        title: "Error",
+        text: "Error exporting PDF. Please try again.",
+        confirmButtonColor: "#d9534f",
       });
     }
   };
@@ -359,30 +366,30 @@ function DashboardPage() {
       const wb = XLSX.utils.book_new();
 
       const detailedData = [];
-      
-      detailedData.push(['JOEMAR SUSPENSION - MONTHLY REPORT']);
+
+      detailedData.push(["JOEMAR SUSPENSION - MONTHLY REPORT"]);
       detailedData.push([getCurrentMonthYear()]);
       detailedData.push([]);
-      
-      detailedData.push(['TICKET STATUS BREAKDOWN']);
-      detailedData.push(['Status', 'Count']);
-      detailedData.push(['Open', stats?.ticketsByStatus?.Open || 0]);
-      detailedData.push(['Pending', stats?.ticketsByStatus?.Pending || 0]);
-      detailedData.push(['In Progress', stats?.ticketsByStatus?.["In Progress"] || 0]);
-      detailedData.push(['Completed', stats?.ticketsByStatus?.Completed || 0]);
-      detailedData.push(['Closed', stats?.ticketsByStatus?.Closed || 0]);
+
+      detailedData.push(["TICKET STATUS BREAKDOWN"]);
+      detailedData.push(["Status", "Count"]);
+      detailedData.push(["Open", stats?.ticketsByStatus?.Open || 0]);
+      detailedData.push(["Pending", stats?.ticketsByStatus?.Pending || 0]);
+      detailedData.push(["In Progress", stats?.ticketsByStatus?.["In Progress"] || 0]);
+      detailedData.push(["Completed", stats?.ticketsByStatus?.Completed || 0]);
+      detailedData.push(["Closed", stats?.ticketsByStatus?.Closed || 0]);
       detailedData.push([]);
-      
-      detailedData.push(['INVENTORY BY CATEGORY']);
-      detailedData.push(['Category', 'Count']);
+
+      detailedData.push(["INVENTORY BY CATEGORY"]);
+      detailedData.push(["Category", "Count"]);
       stats?.inventoryByCategory?.forEach((item) => {
         detailedData.push([item._id, item.count]);
       });
       detailedData.push([]);
-      
+
       detailedData.push(["TODAY'S ACTIVE SERVICES"]);
       if (stats?.todaysActiveTickets?.length > 0) {
-        detailedData.push(['Ticket ID', 'Customer', 'Mechanic', 'Status']);
+        detailedData.push(["Ticket ID", "Customer", "Mechanic", "Status"]);
         stats.todaysActiveTickets.forEach((ticket) => {
           detailedData.push([
             ticket.ticketId,
@@ -392,13 +399,13 @@ function DashboardPage() {
           ]);
         });
       } else {
-        detailedData.push(['No active services for today']);
+        detailedData.push(["No active services for today"]);
       }
       detailedData.push([]);
-      
-      detailedData.push(['LOW STOCK ITEMS']);
+
+      detailedData.push(["LOW STOCK ITEMS"]);
       if (stats?.lowStockItems?.length > 0) {
-        detailedData.push(['Part Name', 'Part Number', 'Quantity', 'Min Level', 'Category']);
+        detailedData.push(["Part Name", "Part Number", "Quantity", "Min Level", "Category"]);
         stats.lowStockItems.forEach((item) => {
           detailedData.push([
             item.partName,
@@ -409,56 +416,56 @@ function DashboardPage() {
           ]);
         });
       } else {
-        detailedData.push(['All items are well stocked']);
+        detailedData.push(["All items are well stocked"]);
       }
 
       const ws1 = XLSX.utils.aoa_to_sheet(detailedData);
-      XLSX.utils.book_append_sheet(wb, ws1, 'Detailed Data');
+      XLSX.utils.book_append_sheet(wb, ws1, "Detailed Data");
 
       const summaryData = [];
-      summaryData.push(['JOEMAR SUSPENSION - DASHBOARD SUMMARY']);
+      summaryData.push(["JOEMAR SUSPENSION - DASHBOARD SUMMARY"]);
       summaryData.push([getCurrentMonthYear()]);
       summaryData.push([]);
-      summaryData.push(['FINANCIAL SUMMARY']);
-      summaryData.push(['Metric', 'Value']);
-      summaryData.push(['Monthly Revenue', `₱${stats?.revenue?.thisMonth?.toLocaleString() || 0}`]);
-      summaryData.push(['Growth vs Last Month', `${parseFloat(stats?.revenue?.growthPercentage) >= 0 ? '+' : ''}${Math.abs(stats?.revenue?.growthPercentage)}%`]);
-      summaryData.push(['Low Stock Alerts', `${stats?.lowStockItems?.length || 0} items`]);
-      summaryData.push(['Active Services Today', `${stats?.todaysActiveTickets?.length || 0} tickets`]);
+      summaryData.push(["FINANCIAL SUMMARY"]);
+      summaryData.push(["Metric", "Value"]);
+      summaryData.push(["Monthly Revenue", `₱${stats?.revenue?.thisMonth?.toLocaleString() || 0}`]);
+      summaryData.push(["Growth vs Last Month", `${parseFloat(stats?.revenue?.growthPercentage) >= 0 ? '+' : ''}${Math.abs(stats?.revenue?.growthPercentage)}%`]);
+      summaryData.push(["Low Stock Alerts", `${stats?.lowStockItems?.length || 0} items`]);
+      summaryData.push(["Active Services Today", `${stats?.todaysActiveTickets?.length || 0} tickets`]);
       summaryData.push([]);
-      summaryData.push(['TICKET STATUS TOTALS']);
-      summaryData.push(['Status', 'Count']);
-      summaryData.push(['Open', stats?.ticketsByStatus?.Open || 0]);
-      summaryData.push(['Pending', stats?.ticketsByStatus?.Pending || 0]);
-      summaryData.push(['In Progress', stats?.ticketsByStatus?.["In Progress"] || 0]);
-      summaryData.push(['Completed', stats?.ticketsByStatus?.Completed || 0]);
-      summaryData.push(['Closed', stats?.ticketsByStatus?.Closed || 0]);
+      summaryData.push(["TICKET STATUS TOTALS"]);
+      summaryData.push(["Status", "Count"]);
+      summaryData.push(["Open", stats?.ticketsByStatus?.Open || 0]);
+      summaryData.push(["Pending", stats?.ticketsByStatus?.Pending || 0]);
+      summaryData.push(["In Progress", stats?.ticketsByStatus?.["In Progress"] || 0]);
+      summaryData.push(["Completed", stats?.ticketsByStatus?.Completed || 0]);
+      summaryData.push(["Closed", stats?.ticketsByStatus?.Closed || 0]);
       summaryData.push([]);
-      summaryData.push(['INVENTORY CATEGORY TOTALS']);
-      summaryData.push(['Category', 'Count']);
+      summaryData.push(["INVENTORY CATEGORY TOTALS"]);
+      summaryData.push(["Category", "Count"]);
       stats?.inventoryByCategory?.forEach((item) => {
         summaryData.push([item._id, item.count]);
       });
 
       const ws2 = XLSX.utils.aoa_to_sheet(summaryData);
-      XLSX.utils.book_append_sheet(wb, ws2, 'Summary');
+      XLSX.utils.book_append_sheet(wb, ws2, "Summary");
 
-      XLSX.writeFile(wb, `Joemar_Suspension_Monthly_Report_${getCurrentMonthYear().replace(' ', '_')}.xlsx`);
+      XLSX.writeFile(wb, `Joemar_Suspension_Monthly_Report_${getCurrentMonthYear().replace(" ", "_")}.xlsx`);
 
       Swal.fire({
-        icon: 'success',
-        title: 'Exported!',
-        text: 'CSV file has been downloaded successfully.',
-        confirmButtonColor: '#5cb85c'
+        icon: "success",
+        title: "Exported!",
+        text: "CSV file has been downloaded successfully.",
+        confirmButtonColor: "#5cb85c"
       });
 
     } catch (error) {
-      console.error('Error exporting CSV:', error);
+      console.error("Error exporting CSV:", error);
       Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'Error exporting CSV. Please try again.',
-        confirmButtonColor: '#d9534f'
+        icon: "error",
+        title: "Error",
+        text: "Error exporting CSV. Please try again.",
+        confirmButtonColor: "#d9534f"
       });
     }
   };
@@ -474,13 +481,7 @@ function DashboardPage() {
           stats?.ticketsByStatus?.Completed || 0,
           stats?.ticketsByStatus?.Closed || 0,
         ],
-        backgroundColor: [
-          "#FF6B6B",
-          "#FFA500",
-          "#4ECDC4",
-          "#95E1D3",
-          "#A8E6CF",
-        ],
+        backgroundColor: ["#FF6B6B", "#FFA500", "#4ECDC4", "#95E1D3", "#A8E6CF"],
         borderColor: ["#fff"],
         borderWidth: 2,
       },
@@ -541,20 +542,20 @@ function DashboardPage() {
                 <img
                   src="/asset/Summary.png"
                   alt="Dashboard"
-                  className={`icon ${isActive("/dashboard") ? "active" : ""}`}
-                  onClick={() => navigate("/dashboard")}
+                  className={`icon ${isActive("/app/dashboard") ? "active" : ""}`}
+                  onClick={() => navigate("/app/dashboard")}
                 />
                 <img
                   src="/asset/Tickets.png"
                   alt="Tickets"
-                  className={`icon ${isActive("/tickets") ? "active" : ""}`}
-                  onClick={() => navigate("/tickets")}
+                  className={`icon ${isActive("/app/tickets") ? "active" : ""}`}
+                  onClick={() => navigate("/app/tickets")}
                 />
                 <img
                   src="/asset/Inventory.png"
                   alt="Inventory"
-                  className={`icon ${isActive("/inventory") ? "active" : ""}`}
-                  onClick={() => navigate("/inventory")}
+                  className={`icon ${isActive("/app/inventory") ? "active" : ""}`}
+                  onClick={() => navigate("/app/inventory")}
                 />
               </>
             )}
@@ -590,20 +591,20 @@ function DashboardPage() {
               <img
                 src="/asset/Summary.png"
                 alt="Dashboard"
-                className={`icon ${isActive("/dashboard") ? "active" : ""}`}
-                onClick={() => navigate("/dashboard")}
+                className={`icon ${isActive("/app/dashboard") ? "active" : ""}`}
+                onClick={() => navigate("/app/dashboard")}
               />
               <img
                 src="/asset/Tickets.png"
                 alt="Tickets"
-                className={`icon ${isActive("/tickets") ? "active" : ""}`}
-                onClick={() => navigate("/tickets")}
+                className={`icon ${isActive("/app/tickets") ? "active" : ""}`}
+                onClick={() => navigate("/app/tickets")}
               />
               <img
                 src="/asset/Inventory.png"
                 alt="Inventory"
-                className={`icon ${isActive("/inventory") ? "active" : ""}`}
-                onClick={() => navigate("/inventory")}
+                className={`icon ${isActive("/app/inventory") ? "active" : ""}`}
+                onClick={() => navigate("/app/inventory")}
               />
             </>
           )}

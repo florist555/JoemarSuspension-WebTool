@@ -228,9 +228,9 @@ function TicketsPage() {
   };
 
   const getStatusColor = (status) => {
-    if (status === "Completed") return "#a3e4a3";
-    if (status === "In Progress") return "#f5c26b";
-    return "#f7f3a3";
+    if (status === "Completed") return "#90EE90";
+    if (status === "In Progress") return "#FFD580";
+    return "#FFEB99";
   };
 
   const filteredTickets = tickets.filter((t) =>
@@ -242,21 +242,29 @@ function TicketsPage() {
     JSON.stringify(editedTicket) !== JSON.stringify(selectedTicket);
 
   return (
-    <div style={{ 
-      display: "flex", 
-      height: "100vh", 
-      fontFamily: "Arial, sans-serif",
-      backgroundColor: "#E8D7B5",
-      overflow: "hidden",
-      padding: "10px",
-      boxSizing: "border-box"
-    }}>
+    <>
+      <style>
+        {`
+          .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+          }
+        `}
+      </style>
+      <div style={{ 
+        display: "flex", 
+        height: "100vh", 
+        fontFamily: "Arial, sans-serif",
+        backgroundColor: "#999999",
+        overflow: "hidden",
+        padding: "10px",
+        boxSizing: "border-box"
+      }}>
       
       <div style={{
         flex: "0 0 45%",
         padding: "10px",
-        backgroundColor: "#F2E2B1",
-        borderRight: "2px solid #BDB395",
+        backgroundColor: "#A9A9A9",
+        borderRight: "2px solid #8B8B8B",
         display: "flex",
         flexDirection: "column",
         overflow: "hidden"
@@ -296,7 +304,7 @@ function TicketsPage() {
                     width: "100%",
                     padding: "6px",
                     borderRadius: "8px",
-                    border: "1px solid #BDB395",
+                    border: "1px solid #8B8B8B",
                     fontSize: "13px",
                     outline: "none",
                     boxSizing: "border-box"
@@ -316,7 +324,7 @@ function TicketsPage() {
                     width: "100%",
                     padding: "6px",
                     borderRadius: "8px",
-                    border: "1px solid #BDB395",
+                    border: "1px solid #8B8B8B",
                     fontSize: "13px",
                     backgroundColor: "#f5f5f5",
                     color: "#888",
@@ -341,7 +349,7 @@ function TicketsPage() {
                     width: "100%",
                     padding: "6px",
                     borderRadius: "8px",
-                    border: "1px solid #BDB395",
+                    border: "1px solid #8B8B8B",
                     fontSize: "13px",
                     outline: "none",
                     boxSizing: "border-box"
@@ -363,7 +371,7 @@ function TicketsPage() {
                     width: "100%",
                     padding: "6px",
                     borderRadius: "8px",
-                    border: "1px solid #BDB395",
+                    border: "1px solid #8B8B8B",
                     fontSize: "13px",
                     outline: "none",
                     backgroundColor: "#fff",
@@ -389,7 +397,7 @@ function TicketsPage() {
                     width: "100%",
                     padding: "6px",
                     borderRadius: "8px",
-                    border: "1px solid #BDB395",
+                    border: "1px solid #8B8B8B",
                     fontSize: "13px",
                     outline: "none",
                     minHeight: "50px",
@@ -415,7 +423,7 @@ function TicketsPage() {
                     width: "100%",
                     padding: "6px",
                     borderRadius: "8px",
-                    border: "1px solid #BDB395",
+                    border: "1px solid #8B8B8B",
                     fontSize: "13px",
                     outline: "none",
                     boxSizing: "border-box"
@@ -439,7 +447,7 @@ function TicketsPage() {
                     width: "100%",
                     padding: "6px",
                     borderRadius: "8px",
-                    border: "1px solid #BDB395",
+                    border: "1px solid #8B8B8B",
                     fontSize: "13px",
                     outline: "none",
                     boxSizing: "border-box"
@@ -459,7 +467,7 @@ function TicketsPage() {
                     width: "100%",
                     padding: "6px",
                     borderRadius: "8px",
-                    border: "1px solid #BDB395",
+                    border: "1px solid #8B8B8B",
                     fontSize: "13px",
                     backgroundColor: "#f5f5f5",
                     color: "#888",
@@ -480,7 +488,7 @@ function TicketsPage() {
                     width: "100%",
                     padding: "6px",
                     borderRadius: "8px",
-                    border: "1px solid #BDB395",
+                    border: "1px solid #8B8B8B",
                     fontSize: "13px",
                     backgroundColor: "#f5f5f5",
                     color: "#888",
@@ -506,7 +514,7 @@ function TicketsPage() {
                       style={{
                         padding: "6px 12px",
                         borderRadius: "8px",
-                        border: editedTicket.status === status ? "3px solid #8B6F47" : "2px solid transparent",
+                        border: editedTicket.status === status ? "3px solid #8B7355" : "2px solid transparent",
                         backgroundColor: getStatusColor(status),
                         cursor: "pointer",
                         fontWeight: "bold",
@@ -580,7 +588,7 @@ function TicketsPage() {
       <div style={{
         flex: "0 0 55%",
         padding: "10px 10px 10px 10px",
-        backgroundColor: "#E8D7B5",
+        backgroundColor: "#999999",
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
@@ -603,7 +611,7 @@ function TicketsPage() {
             style={{
               flex: 1,
               padding: "8px",
-              backgroundColor: "#D4A373",
+              backgroundColor: "#BDB395",
               color: "#fff",
               border: "none",
               borderRadius: "10px",
@@ -636,8 +644,8 @@ function TicketsPage() {
         </div>
 
         {showAddForm && (
-          <form onSubmit={handleCreateTicket} style={{
-            backgroundColor: "#F2E2B1",
+          <div style={{
+            backgroundColor: "#A9A9A9",
             padding: "15px",
             borderRadius: "12px",
             marginBottom: "15px",
@@ -657,7 +665,7 @@ function TicketsPage() {
                 padding: "8px",
                 marginBottom: "8px",
                 borderRadius: "8px",
-                border: "1px solid #BDB395",
+                border: "1px solid #8B8B8B",
                 fontSize: "13px",
                 boxSizing: "border-box"
               }}
@@ -673,7 +681,7 @@ function TicketsPage() {
                 padding: "8px",
                 marginBottom: "8px",
                 borderRadius: "8px",
-                border: "1px solid #BDB395",
+                border: "1px solid #8B8B8B",
                 fontSize: "13px",
                 boxSizing: "border-box"
               }}
@@ -694,7 +702,7 @@ function TicketsPage() {
                 padding: "8px",
                 marginBottom: "8px",
                 borderRadius: "8px",
-                border: "1px solid #BDB395",
+                border: "1px solid #8B8B8B",
                 fontSize: "13px",
                 boxSizing: "border-box"
               }}
@@ -708,7 +716,7 @@ function TicketsPage() {
                 padding: "8px",
                 marginBottom: "8px",
                 borderRadius: "8px",
-                border: "1px solid #BDB395",
+                border: "1px solid #8B8B8B",
                 fontSize: "13px",
                 backgroundColor: "#fff",
                 cursor: "pointer",
@@ -731,7 +739,7 @@ function TicketsPage() {
                 padding: "8px",
                 marginBottom: "8px",
                 borderRadius: "8px",
-                border: "1px solid #BDB395",
+                border: "1px solid #8B8B8B",
                 fontSize: "13px",
                 minHeight: "60px",
                 resize: "vertical",
@@ -753,19 +761,22 @@ function TicketsPage() {
                 padding: "8px",
                 marginBottom: "12px",
                 borderRadius: "8px",
-                border: "1px solid #BDB395",
+                border: "1px solid #8B8B8B",
                 fontSize: "13px",
                 boxSizing: "border-box"
               }}
             />
             
             <button
-              type="submit"
+              onClick={(e) => {
+                e.preventDefault();
+                handleCreateTicket(e);
+              }}
               disabled={loading}
               style={{
                 width: "100%",
                 padding: "10px",
-                backgroundColor: "#8B6F47",
+                backgroundColor: "#8B7355",
                 color: "#fff",
                 border: "none",
                 borderRadius: "8px",
@@ -777,7 +788,7 @@ function TicketsPage() {
             >
               {loading ? "Creating..." : "Create Ticket"}
             </button>
-          </form>
+          </div>
         )}
 
           <input
@@ -788,7 +799,7 @@ function TicketsPage() {
             style={{
               padding: "8px 10px",
               borderRadius: "12px",
-              border: "1px solid #BDB395",
+              border: "1px solid #8B8B8B",
               width: "100%",
               marginBottom: "10px",
               fontSize: "13px",
@@ -803,8 +814,12 @@ function TicketsPage() {
           flex: 1, 
           overflowY: "auto",
           paddingRight: "5px",
-          marginBottom: "10px"
-        }}>
+          marginBottom: "10px",
+          scrollbarWidth: "none",
+          msOverflowStyle: "none"
+        }}
+        className="hide-scrollbar"
+        >
           {filteredTickets.map(ticket => (
             <div
               key={ticket._id}
@@ -820,11 +835,11 @@ function TicketsPage() {
                 padding: "12px",
                 marginBottom: "10px",
                 borderRadius: "12px",
-                backgroundColor: selectedTicket?._id === ticket._id ? "#D4A373" : getStatusColor(ticket.status),
+                backgroundColor: selectedTicket?._id === ticket._id ? "#BDB395" : getStatusColor(ticket.status),
                 boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
                 cursor: "pointer",
                 transition: "all 0.2s ease",
-                border: selectedTicket?._id === ticket._id ? "2px solid #8B6F47" : "2px solid transparent"
+                border: selectedTicket?._id === ticket._id ? "2px solid #8B7355" : "2px solid transparent"
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
@@ -839,7 +854,7 @@ function TicketsPage() {
                 <div style={{ 
                   padding: "4px 12px", 
                   borderRadius: "20px", 
-                  backgroundColor: selectedTicket?._id === ticket._id ? "#8B6F47" : "#fff",
+                  backgroundColor: selectedTicket?._id === ticket._id ? "#8B7355" : "#fff",
                   color: selectedTicket?._id === ticket._id ? "#fff" : "#000",
                   fontSize: "12px",
                   fontWeight: "bold"
@@ -854,7 +869,8 @@ function TicketsPage() {
           ))}
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 

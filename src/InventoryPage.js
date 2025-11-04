@@ -7,6 +7,8 @@ const InventoryPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOrder, setSortOrder] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
+  const [isEditingQuantity, setIsEditingQuantity] = useState(false);
+  const [tempQuantity, setTempQuantity] = useState("");
   const [newItem, setNewItem] = useState({
     partName: "",
     partNumber: "",
@@ -53,6 +55,8 @@ const InventoryPage = () => {
 
   const updateItem = async (id, updates) => {
     try {
+      setSelectedItem(prev => ({...prev, ...updates}));
+      
       const response = await fetch(`http://localhost:5000/api/inventory/${id}`, {
         method: 'PUT',
         headers: {
@@ -60,6 +64,10 @@ const InventoryPage = () => {
         },
         body: JSON.stringify(updates)
       });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update item');
+      }
       
       const updatedItem = await response.json();
       
@@ -72,12 +80,41 @@ const InventoryPage = () => {
       setSelectedItem(updatedItem);
     } catch (error) {
       console.error('Error updating item:', error);
+      fetchInventory();
       Swal.fire({
         icon: 'error',
         title: 'Error',
         text: 'Error saving changes. Please try again.',
         confirmButtonColor: '#d9534f'
       });
+    }
+  };
+
+  const handleQuantityDoubleClick = () => {
+    setIsEditingQuantity(true);
+    setTempQuantity(selectedItem.quantity.toString());
+  };
+
+  const handleQuantityChange = (e) => {
+    const value = e.target.value;
+    if (value === "" || /^\d+$/.test(value)) {
+      setTempQuantity(value);
+    }
+  };
+
+  const handleQuantityBlur = () => {
+    const newQuantity = parseInt(tempQuantity);
+    if (!isNaN(newQuantity) && newQuantity >= 0) {
+      updateItem(selectedItem._id, { quantity: newQuantity });
+    }
+    setIsEditingQuantity(false);
+  };
+
+  const handleQuantityKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleQuantityBlur();
+    } else if (e.key === 'Escape') {
+      setIsEditingQuantity(false);
     }
   };
 
@@ -259,21 +296,29 @@ const InventoryPage = () => {
     });
 
   return (
-    <div style={{ 
-      display: "flex", 
-      height: "100vh", 
-      fontFamily: "Arial, sans-serif",
-      backgroundColor: "#E8D7B5",
-      overflow: "hidden",
-      padding: "10px",
-      boxSizing: "border-box"
-    }}>
+    <>
+      <style>
+        {`
+          .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+          }
+        `}
+      </style>
+      <div style={{ 
+        display: "flex", 
+        height: "100vh", 
+        fontFamily: "Arial, sans-serif",
+        backgroundColor: "#999999",
+        overflow: "hidden",
+        padding: "10px",
+        boxSizing: "border-box"
+      }}>
       
       <div style={{
         flex: "0 0 45%",
         padding: "10px",
-        backgroundColor: "#F2E2B1",
-        borderRight: "2px solid #BDB395",
+        backgroundColor: "#A9A9A9",
+        borderRight: "2px solid #8B8B8B",
         display: "flex",
         flexDirection: "column",
         overflow: "hidden"
@@ -313,7 +358,7 @@ const InventoryPage = () => {
                     width: "100%",
                     padding: "6px",
                     borderRadius: "8px",
-                    border: "1px solid #BDB395",
+                    border: "1px solid #8B8B8B",
                     fontSize: "13px",
                     outline: "none",
                     boxSizing: "border-box"
@@ -332,7 +377,7 @@ const InventoryPage = () => {
                     width: "100%",
                     padding: "6px",
                     borderRadius: "8px",
-                    border: "1px solid #BDB395",
+                    border: "1px solid #8B8B8B",
                     fontSize: "13px",
                     outline: "none",
                     boxSizing: "border-box",
@@ -358,7 +403,7 @@ const InventoryPage = () => {
                     width: "100%",
                     padding: "6px",
                     borderRadius: "8px",
-                    border: "1px solid #BDB395",
+                    border: "1px solid #8B8B8B",
                     fontSize: "13px",
                     outline: "none",
                     boxSizing: "border-box"
@@ -453,7 +498,7 @@ const InventoryPage = () => {
                 </div>
               )}
 
-              <div style={{ marginTop: "10px", padding: "10px", backgroundColor: "#F2E2B1", borderRadius: "10px", marginBottom: "8px" }}>
+              <div style={{ marginTop: "10px", padding: "10px", backgroundColor: "#A9A9A9", borderRadius: "10px", marginBottom: "8px" }}>
                 <label style={{ fontWeight: "600", color: "#555", fontSize: "13px", display: "block", marginBottom: "10px", textAlign: "center" }}>
                   Current Stock
                 </label>
@@ -462,7 +507,7 @@ const InventoryPage = () => {
                     onClick={() => updateItem(selectedItem._id, { quantity: selectedItem.quantity - 1 })}
                     disabled={selectedItem.quantity <= 0}
                     style={{
-                      backgroundColor: "#D4A373",
+                      backgroundColor: "#BDB395",
                       border: "none",
                       borderRadius: "8px",
                       padding: "10px 18px",
@@ -476,19 +521,46 @@ const InventoryPage = () => {
                   >
                     -
                   </button>
-                  <span style={{ 
-                    fontWeight: "bold", 
-                    fontSize: "28px", 
-                    minWidth: "70px", 
-                    textAlign: "center",
-                    color: selectedItem.quantity <= selectedItem.minStockLevel ? "#d32f2f" : "#000"
-                  }}>
-                    {selectedItem.quantity}
-                  </span>
+                  {isEditingQuantity ? (
+                    <input
+                      type="text"
+                      value={tempQuantity}
+                      onChange={handleQuantityChange}
+                      onBlur={handleQuantityBlur}
+                      onKeyDown={handleQuantityKeyDown}
+                      autoFocus
+                      style={{
+                        fontWeight: "bold",
+                        fontSize: "28px",
+                        width: "70px",
+                        textAlign: "center",
+                        border: "2px solid #BDB395",
+                        borderRadius: "8px",
+                        padding: "5px",
+                        outline: "none"
+                      }}
+                    />
+                  ) : (
+                    <span 
+                      onDoubleClick={handleQuantityDoubleClick}
+                      style={{ 
+                        fontWeight: "bold", 
+                        fontSize: "28px", 
+                        minWidth: "70px", 
+                        textAlign: "center",
+                        color: selectedItem.quantity <= selectedItem.minStockLevel ? "#d32f2f" : "#000",
+                        cursor: "pointer",
+                        userSelect: "none"
+                      }}
+                      title="Double-click to edit"
+                    >
+                      {selectedItem.quantity}
+                    </span>
+                  )}
                   <button
                     onClick={() => updateItem(selectedItem._id, { quantity: selectedItem.quantity + 1 })}
                     style={{
-                      backgroundColor: "#D4A373",
+                      backgroundColor: "#BDB395",
                       border: "none",
                       borderRadius: "8px",
                       padding: "10px 18px",
@@ -561,7 +633,7 @@ const InventoryPage = () => {
       <div style={{
         flex: "0 0 55%",
         padding: "10px 10px 10px 10px",
-        backgroundColor: "#E8D7B5",
+        backgroundColor: "#999999",
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
@@ -617,8 +689,8 @@ const InventoryPage = () => {
         </div>
 
         {showAddForm && (
-          <form onSubmit={addNewItem} style={{
-            backgroundColor: "#F2E2B1",
+          <div style={{
+            backgroundColor: "#A9A9A9",
             padding: "15px",
             borderRadius: "12px",
             marginBottom: "15px",
@@ -737,11 +809,14 @@ const InventoryPage = () => {
             />
             
             <button
-              type="submit"
+              onClick={(e) => {
+                e.preventDefault();
+                addNewItem(e);
+              }}
               style={{
                 width: "100%",
                 padding: "10px",
-                backgroundColor: "#8B6F47",
+                backgroundColor: "#8B7355",
                 color: "#fff",
                 border: "none",
                 borderRadius: "8px",
@@ -752,7 +827,7 @@ const InventoryPage = () => {
             >
               Add Item
             </button>
-          </form>
+          </div>
         )}
 
         <input
@@ -801,8 +876,12 @@ const InventoryPage = () => {
           flex: 1, 
           overflowY: "auto",
           paddingRight: "5px",
-          marginBottom: "10px"
-        }}>
+          marginBottom: "10px",
+          scrollbarWidth: "none",
+          msOverflowStyle: "none"
+        }}
+        className="hide-scrollbar"
+        >
           {filteredAndSortedItems.map(item => (
             <div
               key={item._id}
@@ -811,11 +890,11 @@ const InventoryPage = () => {
                 padding: "12px",
                 marginBottom: "10px",
                 borderRadius: "12px",
-                backgroundColor: selectedItem?._id === item._id ? "#D4A373" : "#F2E2B1",
+                backgroundColor: selectedItem?._id === item._id ? "#BDB395" : "#A9A9A9",
                 boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
                 cursor: "pointer",
                 transition: "all 0.2s ease",
-                border: selectedItem?._id === item._id ? "2px solid #8B6F47" : "2px solid transparent"
+                border: selectedItem?._id === item._id ? "2px solid #8B7355" : "2px solid transparent"
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -827,7 +906,7 @@ const InventoryPage = () => {
                     ID: {item.partNumber} | Stock: {item.quantity}
                   </div>
                 </div>
-                <div style={{ fontWeight: "bold", fontSize: "15px", color: selectedItem?._id === item._id ? "#fff" : "#8B6F47" }}>
+                <div style={{ fontWeight: "bold", fontSize: "15px", color: selectedItem?._id === item._id ? "#333" : "#333" }}>
                   ₱{item.price.toFixed(2)}
                 </div>
               </div>
@@ -835,7 +914,8 @@ const InventoryPage = () => {
           ))}
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

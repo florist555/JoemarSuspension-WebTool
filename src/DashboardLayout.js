@@ -1,15 +1,13 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation, Outlet } from "react-router-dom";
+import { useLogout } from "./LogoutHandler";
 import "./DashboardPage.css";
 
 function DashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [showIcons, setShowIcons] = useState(true);
-
-  const handleLogout = () => {
-    navigate("/");
-  };
+  const handleLogout = useLogout();
 
   const toggleIcons = () => {
     setShowIcons(!showIcons);
@@ -32,20 +30,20 @@ function DashboardLayout() {
               <img
                 src="/asset/Summary.png"
                 alt="Dashboard"
-                className={`icon ${isActive("/dashboard") ? "active" : ""}`}
-                onClick={() => navigate("/dashboard")}
+                className={`icon ${isActive("/app/dashboard") ? "active" : ""}`}
+                onClick={() => navigate("/app/dashboard")}
               />
               <img
                 src="/asset/Tickets.png"
                 alt="Tickets"
-                className={`icon ${isActive("/tickets") ? "active" : ""}`}
-                onClick={() => navigate("/tickets")}
+                className={`icon ${isActive("/app/tickets") ? "active" : ""}`}
+                onClick={() => navigate("/app/tickets")}
               />
               <img
                 src="/asset/Inventory.png"
                 alt="Inventory"
-                className={`icon ${isActive("/inventory") ? "active" : ""}`}
-                onClick={() => navigate("/inventory")}
+                className={`icon ${isActive("/app/inventory") ? "active" : ""}`}
+                onClick={() => navigate("/app/inventory")}
               />
             </>
           )}

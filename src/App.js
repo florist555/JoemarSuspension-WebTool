@@ -11,11 +11,13 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<LoginPage />} />
-        <Route path="/" element={<DashboardLayout />}>
+
+        <Route path="/app" element={<DashboardLayout />}>
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="tickets" element={<TicketsPage />} />
           <Route path="inventory" element={<InventoryPage />} />
         </Route>
+
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>

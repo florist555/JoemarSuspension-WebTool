@@ -1,15 +1,23 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import "./LoginPage.css";
 
 function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const API_URL = "http://localhost:5000/api/auth";
+
+  useEffect(() => {
+    const isAuthenticated = localStorage.getItem("isAuthenticated");
+    if (isAuthenticated === "true" && location.pathname === "/") {
+      navigate("/app/dashboard", { replace: true });
+    }
+  }, [navigate, location.pathname]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -39,7 +47,7 @@ function LoginPage() {
         localStorage.setItem("userId", data.user.id);
         localStorage.setItem("userEmail", data.user.email);
         localStorage.setItem("userRole", data.user.role);
-        navigate("/dashboard");
+        navigate("/app/dashboard", { replace: true });
       }
     } catch (err) {
       setError("Connection error. Please make sure the server is running.");
